@@ -34,11 +34,6 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".BootCompletedIntentReceiver" >
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
         <receiver android:name=".BluetoothStateReceiver" >
             <intent-filter>
                 <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
@@ -51,11 +46,6 @@
         <service
             android:name=".BeaconTrackingService"
             android:exported="false" />
-        <activity
-            android:name=".InvisibleActivity"
-            android:label="@string/title_activity_invisible"
-            android:theme="@android:style/Theme.NoDisplay">
-        </activity>
     </application>
 
 </manifest>
