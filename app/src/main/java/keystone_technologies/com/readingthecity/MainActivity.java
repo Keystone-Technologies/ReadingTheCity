@@ -28,7 +28,7 @@ public class MainActivity extends Activity {
 
     private BeaconManager beaconManager;
     private NotificationManager notificationManager;
-    private Region region;
+   // private Region region;
 
 
     @Override
