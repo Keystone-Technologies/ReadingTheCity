@@ -20,7 +20,7 @@ import java.util.List;
 public class BeaconTrackingService extends Service {
 
     private static BeaconManager beaconManager;
-    private static List<Beacon> tempList = new ArrayList<Beacon>();
+    private static List<Beacon> tempList;
 
 
     @Override
@@ -33,6 +33,8 @@ public class BeaconTrackingService extends Service {
         Toast.makeText(this, "Service created!", Toast.LENGTH_LONG).show();
 
         beaconManager = new BeaconManager(this);
+
+        tempList = new ArrayList<Beacon>();
 
         beaconManager.setRangingListener(new BeaconManager.RangingListener() {
 
