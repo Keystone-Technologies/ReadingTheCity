@@ -30,7 +30,6 @@ public class BeaconTrackingService extends Service {
         Toast.makeText(this, "Service created!", Toast.LENGTH_LONG).show();
 
         dataSource = new BeaconDataSource(this);
-        dataSource.open();
 
         beaconManager = new BeaconManager(this);
 
@@ -39,10 +38,12 @@ public class BeaconTrackingService extends Service {
             @Override
             public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
 
+               // dataSource.open();
                 List<BeaconDevice> beaconList = dataSource.getAllBeacons();
 
                 if (beaconList.size() == 0) {
                     dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
+                    beaconNotify(beacons.get(0));
                 } else {
                     for (BeaconDevice b : beaconList) {
                         if (!b.getUUID().equals(beacons.get(0).getProximityUUID())) {
@@ -84,7 +85,6 @@ public class BeaconTrackingService extends Service {
     public void onDestroy() {
         Toast.makeText(this, "Service stopped", Toast.LENGTH_LONG).show();
         try {
-            dataSource.close();
             beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
             beaconManager.disconnect();
         } catch (RemoteException e) {

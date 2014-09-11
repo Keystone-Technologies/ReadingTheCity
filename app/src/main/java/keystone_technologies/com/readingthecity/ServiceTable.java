@@ -1,8 +1,10 @@
 package keystone_technologies.com.readingthecity;
 
 import android.content.Context;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 public class ServiceTable extends SQLiteOpenHelper {
 
@@ -13,8 +15,8 @@ public class ServiceTable extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "data.db";
     private static final int DATABASE_VERSION = 1;
 
-    private static final String DATABASE_CREATE = "create table " + TABLE_SERVICE + "(" +
-            COLUMN_BEACON + " text not null primary key," + COLUMN_RESPOMSE + " integer not null);";
+    private static final String DATABASE_CREATE = "create table " + TABLE_SERVICE + " ( " +
+            COLUMN_BEACON + " TEXT PRIMARY KEY, " + COLUMN_RESPOMSE + " INTEGER );";
 
     public ServiceTable(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -22,7 +24,11 @@ public class ServiceTable extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase database) {
-        database.execSQL(DATABASE_CREATE);
+        try {
+            database.execSQL(DATABASE_CREATE);
+        } catch (SQLException e) {
+            Log.e("SQLERROR", e.toString());
+        }
     }
 
     @Override

@@ -1,6 +1,6 @@
 package keystone_technologies.com.readingthecity;
 
-public class Beacon {
+public class BeaconDevice {
 
     private String UUID;
     private int response;
@@ -17,7 +17,7 @@ public class Beacon {
         return response;
     }
 
-    public void setResponse() {
+    public void setResponse(int response) {
         this.response = response;
     }
 }
