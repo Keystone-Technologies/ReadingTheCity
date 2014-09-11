@@ -1,10 +1,7 @@
 package keystone_technologies.com.readingthecity;
 
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
@@ -20,7 +17,7 @@ import java.util.List;
 public class BeaconTrackingService extends Service {
 
     private static BeaconManager beaconManager;
-    private static List<Beacon> tempList;
+    //private static List<Beacon> tempList;
 
 
     @Override
@@ -34,7 +31,7 @@ public class BeaconTrackingService extends Service {
 
         beaconManager = new BeaconManager(this);
 
-        tempList = new ArrayList<Beacon>();
+        //tempList = new ArrayList<Beacon>();
 
         beaconManager.setRangingListener(new BeaconManager.RangingListener() {
 
@@ -44,17 +41,17 @@ public class BeaconTrackingService extends Service {
 
 
              //   for (int i = 0; i < beacons.size(); i++) {
-                if (tempList.size() == 0) {
-                    tempList.add(beacons.get(0));
-                    beaconNotify(beacons.get(0));
-                } else {
-                    for (int i = 0; i < tempList.size(); i++) {
-                        if (!beacons.get(0).getProximityUUID().equals(tempList.get(i).getProximityUUID())) {
-                            tempList.add(beacons.get(0));
-                            beaconNotify(beacons.get(i));
-                        }
-                    }
-                }
+//                if (tempList.size() == 0) {
+//                    tempList.add(beacons.get(0));
+//                    beaconNotify(beacons.get(0));
+//                } else {
+//                    for (int i = 0; i < tempList.size(); i++) {
+//                        if (!beacons.get(0).getProximityUUID().equals(tempList.get(i).getProximityUUID())) {
+//                            tempList.add(beacons.get(0));
+//                            beaconNotify(beacons.get(i));
+//                        }
+//                    }
+//                }
 
 
              //   }
