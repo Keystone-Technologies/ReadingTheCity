@@ -44,11 +44,11 @@ public class Utilities {
         if (msg.equals("bluetooth")) {
             if (isBlueToothEnabled()) {
                 startService(c);
-                builder.setSmallIcon(R.drawable.beacon_gray);
-                builder.setContentText("Searching For Beacons");
+                //builder.setSmallIcon(R.drawable.beacon_gray);
+                //builder.setContentText("Searching For Beacons");
             } else {
                 stopService(c);
-                //BeaconTrackingService.stopTrackingListener();
+                BeaconTrackingService.stopTrackingListener();
                 builder.setSmallIcon(R.drawable.bg_distance);
                 builder.setContentText("Bluetooth not enabled!");
             }

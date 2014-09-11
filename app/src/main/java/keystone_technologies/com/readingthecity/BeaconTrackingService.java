@@ -1,5 +1,6 @@
 package keystone_technologies.com.readingthecity;
 
+import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -11,13 +12,12 @@ import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class BeaconTrackingService extends Service {
 
     private static BeaconManager beaconManager;
-    //private static List<Beacon> tempList;
+    private BeaconDataSource dataSource;
 
 
     @Override
@@ -29,51 +29,39 @@ public class BeaconTrackingService extends Service {
     public void onCreate() {
         Toast.makeText(this, "Service created!", Toast.LENGTH_LONG).show();
 
+        dataSource = new BeaconDataSource(this);
+        dataSource.open();
+
         beaconManager = new BeaconManager(this);
 
-        //tempList = new ArrayList<Beacon>();
-
         beaconManager.setRangingListener(new BeaconManager.RangingListener() {
-
 
             @Override
             public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
 
+                List<BeaconDevice> beaconList = dataSource.getAllBeacons();
 
-             //   for (int i = 0; i < beacons.size(); i++) {
-//                if (tempList.size() == 0) {
-//                    tempList.add(beacons.get(0));
-//                    beaconNotify(beacons.get(0));
-//                } else {
-//                    for (int i = 0; i < tempList.size(); i++) {
-//                        if (!beacons.get(0).getProximityUUID().equals(tempList.get(i).getProximityUUID())) {
-//                            tempList.add(beacons.get(0));
-//                            beaconNotify(beacons.get(i));
-//                        }
-//                    }
-//                }
-
-
-             //   }
-
-
-
-
-//                // Note that results are not delivered on UI thread.
-//                final Thread thread = new Thread() {
-//                    @Override
-//                    public void run() {
-//
-//                        // Note that beacons reported here are already sorted by estimated
-//                        // distance between device and beacon.
-//                        //getActionBar().setSubtitle("Found beacons: " + beacons.size());
-//                        System.out.println("*****************************here**********************");
-//                        Utilities.postNotification("Beacon Found", getApplicationContext());
-//                    }
-//                };
-//               // thread.start();
+                if (beaconList.size() == 0) {
+                    dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
+                } else {
+                    for (BeaconDevice b : beaconList) {
+                        if (!b.getUUID().equals(beacons.get(0).getProximityUUID())) {
+                            dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
+                            beaconNotify(beacons.get(0));
+                        }
+                    }
+                }
             }
         });
+
+        Notification notification = new Notification.Builder(this)
+                .setSmallIcon(R.drawable.beacon_gray)
+                .setContentText("Looking For Beacons")
+                .setContentTitle("Tracking Service Started")
+                .getNotification();
+
+
+        startForeground(1, notification);
     }
 
     public void beaconNotify(Beacon b) {
@@ -86,6 +74,7 @@ public class BeaconTrackingService extends Service {
     public static void stopTrackingListener() {
         try {
             beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
+          //  stopSelf();
         } catch (RemoteException e) {
 
         }
@@ -95,6 +84,7 @@ public class BeaconTrackingService extends Service {
     public void onDestroy() {
         Toast.makeText(this, "Service stopped", Toast.LENGTH_LONG).show();
         try {
+            dataSource.close();
             beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
             beaconManager.disconnect();
         } catch (RemoteException e) {
