@@ -38,7 +38,6 @@ public class BeaconTrackingService extends Service {
             @Override
             public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
 
-               // dataSource.open();
                 List<BeaconDevice> beaconList = dataSource.getAllBeacons();
 
                 if (beaconList.size() == 0) {
@@ -75,6 +74,7 @@ public class BeaconTrackingService extends Service {
     public static void stopTrackingListener() {
         try {
             beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
+            beaconManager.disconnect();
         } catch (RemoteException e) {
 
         }

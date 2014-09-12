@@ -31,22 +31,22 @@ public class BluetoothStateReceiver extends BroadcastReceiver {
         }
     }
 
-    public void startEstimoteService(Context c) {
+    public static void startEstimoteService(Context c) {
         pushIntent = new Intent(c, com.estimote.sdk.service.BeaconService.class);
         c.startService(pushIntent);
     }
 
-    public void stopEstimoteService(Context c) {
+    public static void stopEstimoteService(Context c) {
         pushIntent = new Intent(c, com.estimote.sdk.service.BeaconService.class);
         c.stopService(pushIntent);
     }
 
-    public void startTrackingService(Context c) {
+    public static void startTrackingService(Context c) {
         pushIntent = new Intent(c, BeaconTrackingService.class);
         c.startService(pushIntent);
     }
 
-    public void stopTrackingService(Context c) {
+    public static void stopTrackingService(Context c) {
         pushIntent = new Intent(c, BeaconTrackingService.class);
         c.stopService(pushIntent);
     }

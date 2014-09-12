@@ -18,11 +18,6 @@ public class Utilities {
         return true;
     }
 
-    public static void startService(Context c) {
-        Intent pushIntent = new Intent(c, com.estimote.sdk.service.BeaconService.class);
-        c.startService(pushIntent);
-    }
-
     public static void postNotification(String msg, Context c) {
         Notification.Builder builder = new Notification.Builder(c);
         NotificationManager notificationManager = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);

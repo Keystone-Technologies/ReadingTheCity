@@ -38,8 +38,8 @@ public class MainActivity extends Activity {
         super.onStart();
 
         if (Utilities.isBlueToothEnabled()) {
-            Utilities.startService(this);
-            Utilities.startTrackingService(this);
+            BluetoothStateReceiver.startEstimoteService(this);
+            BluetoothStateReceiver.startTrackingService(this);
         }
     }
 }
