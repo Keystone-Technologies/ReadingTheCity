@@ -33,7 +33,6 @@ public class BeaconTrackingService extends Service {
 
         dataSource = new BeaconDataSource(this);
         beaconList = new ArrayList<BeaconDevice>();
-        dataSource.open();
 
         beaconManager = new BeaconManager(this);
 
@@ -58,8 +57,8 @@ public class BeaconTrackingService extends Service {
 
     public static void stopTrackingListener() {
         try {
-            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
             beaconManager.disconnect();
+            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
         } catch (RemoteException e) {
 
         }
@@ -69,8 +68,8 @@ public class BeaconTrackingService extends Service {
     public void onDestroy() {
         Toast.makeText(this, "Service stopped", Toast.LENGTH_LONG).show();
         try {
-            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
             beaconManager.disconnect();
+            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
         } catch (RemoteException e) {
 
         }
@@ -87,6 +86,7 @@ public class BeaconTrackingService extends Service {
                 try {
                     beaconManager.startRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
                     Toast.makeText(getApplicationContext(), "try start ranging", Toast.LENGTH_LONG).show();
+                    //dataSource.open();
                 } catch (RemoteException e) {
                     // Log.e(TAG, "Cannot start ranging", e);
                     Toast.makeText(getApplicationContext(), "Cannot start ranging", Toast.LENGTH_LONG).show();

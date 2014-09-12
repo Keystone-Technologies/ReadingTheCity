@@ -28,13 +28,13 @@ public class BeaconDataSource {
     }
 
     public void createBeacon(String UUID, int response) {
-        //open();
+        open();
         ContentValues values = new ContentValues();
         values.put(ServiceTable.COLUMN_BEACON, UUID);
         values.put(ServiceTable.COLUMN_RESPOMSE, response);
 
         database.insert(ServiceTable.TABLE_SERVICE, null, values);
-        //close();
+        close();
 
 //        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, allColumns, ServiceTable.COLUMN_BEACON +
 //                " = " + UUID, null, null, null, null);
@@ -51,7 +51,7 @@ public class BeaconDataSource {
 
     public List<BeaconDevice> getAllBeacons() {
         List<BeaconDevice> beacons = new ArrayList<BeaconDevice>();
-        //open();
+        open();
 
         Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, allColumns, null, null, null, null, null);
 
@@ -63,7 +63,7 @@ public class BeaconDataSource {
         }
 
         cursor.close();
-       // close();
+        close();
         return beacons;
     }
 
