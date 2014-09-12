@@ -28,12 +28,12 @@ public class Utilities {
         NotificationManager notificationManager = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         if (msg.equals("bluetooth")) {
             if (isBlueToothEnabled()) {
-                startService(c);
-                //builder.setSmallIcon(R.drawable.beacon_gray);
-                //builder.setContentText("Searching For Beacons");
+                //startService(c);
+                builder.setSmallIcon(R.drawable.beacon_gray);
+                builder.setContentText("Searching For Beacons");
             } else {
-                stopService(c);
-                BeaconTrackingService.stopTrackingListener();
+                //stopService(c);
+               // BeaconTrackingService.stopTrackingListener();
                 builder.setSmallIcon(R.drawable.bg_distance);
                 builder.setContentText("Bluetooth not enabled!");
             }

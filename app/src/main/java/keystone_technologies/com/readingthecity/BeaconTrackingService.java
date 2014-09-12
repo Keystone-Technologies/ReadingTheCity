@@ -75,7 +75,6 @@ public class BeaconTrackingService extends Service {
     public static void stopTrackingListener() {
         try {
             beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
-          //  stopSelf();
         } catch (RemoteException e) {
 
         }
