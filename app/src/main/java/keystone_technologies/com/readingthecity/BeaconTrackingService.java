@@ -37,26 +37,7 @@ public class BeaconTrackingService extends Service {
 
         beaconManager = new BeaconManager(this);
 
-        beaconManager.setRangingListener(new BeaconManager.RangingListener() {
 
-            @Override
-            public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
-
-                beaconList = dataSource.getAllBeacons();
-
-                if (beaconList.size() == 0) {
-                    dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
-                    beaconNotify(beacons.get(0));
-                } else {
-                    for (BeaconDevice b : beaconList) {
-                        if (!b.getUUID().equals(beacons.get(0).getProximityUUID())) {
-                            dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
-                            beaconNotify(beacons.get(0));
-                        }
-                    }
-                }
-            }
-        });
 
         Notification notification = new Notification.Builder(this)
                 .setSmallIcon(R.drawable.beacon_gray)
@@ -106,11 +87,33 @@ public class BeaconTrackingService extends Service {
                 try {
                     beaconManager.startRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
                     Toast.makeText(getApplicationContext(), "try start ranging", Toast.LENGTH_LONG).show();
-
                 } catch (RemoteException e) {
                     // Log.e(TAG, "Cannot start ranging", e);
                     Toast.makeText(getApplicationContext(), "Cannot start ranging", Toast.LENGTH_LONG).show();
                 }
+
+                    beaconManager.setRangingListener(new BeaconManager.RangingListener() {
+
+                        @Override
+                        public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
+
+                            if (beacons.size() > 0) {
+                                beaconList = dataSource.getAllBeacons();
+
+                                if (beaconList.size() == 0) {
+                                    dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
+                                    beaconNotify(beacons.get(0));
+                                } else {
+                                    for (BeaconDevice b : beaconList) {
+                                        if (!b.getUUID().equals(beacons.get(0).getProximityUUID())) {
+                                            dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
+                                            beaconNotify(beacons.get(0));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
             }
         });
 
