@@ -1,6 +1,8 @@
 package keystone_technologies.com.readingthecity;
 
 import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -38,8 +40,20 @@ public class MainActivity extends Activity {
         super.onStart();
 
         if (Utilities.isBlueToothEnabled()) {
-            BluetoothStateReceiver.startEstimoteService(this);
-            BluetoothStateReceiver.startTrackingService(this);
+            if (!isMyServiceRunning(ServiceTable.class)) {
+                BluetoothStateReceiver.startEstimoteService(this);
+                BluetoothStateReceiver.startTrackingService(this);
+            }
         }
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

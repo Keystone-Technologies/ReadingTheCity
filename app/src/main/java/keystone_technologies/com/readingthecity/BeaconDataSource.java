@@ -51,7 +51,7 @@ public class BeaconDataSource {
 
     public List<BeaconDevice> getAllBeacons() {
         List<BeaconDevice> beacons = new ArrayList<BeaconDevice>();
-        open();
+        //open();
 
         Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, allColumns, null, null, null, null, null);
 

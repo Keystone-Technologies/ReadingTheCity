@@ -12,12 +12,14 @@ import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class BeaconTrackingService extends Service {
 
     private static BeaconManager beaconManager;
     private BeaconDataSource dataSource;
+    List<BeaconDevice> beaconList;
 
 
     @Override
@@ -30,6 +32,8 @@ public class BeaconTrackingService extends Service {
         Toast.makeText(this, "Service created!", Toast.LENGTH_LONG).show();
 
         dataSource = new BeaconDataSource(this);
+        beaconList = new ArrayList<BeaconDevice>();
+        dataSource.open();
 
         beaconManager = new BeaconManager(this);
 
@@ -38,7 +42,7 @@ public class BeaconTrackingService extends Service {
             @Override
             public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
 
-                List<BeaconDevice> beaconList = dataSource.getAllBeacons();
+                beaconList = dataSource.getAllBeacons();
 
                 if (beaconList.size() == 0) {
                     dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
