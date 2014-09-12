@@ -86,9 +86,7 @@ public class BeaconTrackingService extends Service {
                 try {
                     beaconManager.startRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
                     Toast.makeText(getApplicationContext(), "try start ranging", Toast.LENGTH_LONG).show();
-                    //dataSource.open();
                 } catch (RemoteException e) {
-                    // Log.e(TAG, "Cannot start ranging", e);
                     Toast.makeText(getApplicationContext(), "Cannot start ranging", Toast.LENGTH_LONG).show();
                 }
 
