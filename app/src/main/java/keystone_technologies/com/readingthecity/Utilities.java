@@ -23,21 +23,6 @@ public class Utilities {
         c.startService(pushIntent);
     }
 
-    public static void stopService(Context c) {
-        Intent pushIntent = new Intent(c, com.estimote.sdk.service.BeaconService.class);
-        c.stopService(pushIntent);
-    }
-
-    public static void startTrackingService(Context c) {
-        Intent pushIntent = new Intent(c, BeaconTrackingService.class);
-        c.startService(pushIntent);
-    }
-
-    public static void stopTrackingService(Context c) {
-        Intent pushIntent = new Intent(c, BeaconTrackingService.class);
-        c.stopService(pushIntent);
-    }
-
     public static void postNotification(String msg, Context c) {
         Notification.Builder builder = new Notification.Builder(c);
         NotificationManager notificationManager = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
