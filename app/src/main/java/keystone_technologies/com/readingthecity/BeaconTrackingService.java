@@ -57,19 +57,32 @@ public class BeaconTrackingService extends Service {
     }
 
     public void postNotification(String msg, Context c) {
-        Notification.Builder builder = new Notification.Builder(c);
 
         //Yes intent
         Intent yesReceive = new Intent();
         //yesReceive.setAction(YES_ACTION);
         PendingIntent pendingIntentYes = PendingIntent.getBroadcast(this, 12345, yesReceive, PendingIntent.FLAG_UPDATE_CURRENT);
-        builder.addAction(R.drawable.beacon_gray, "Yes", pendingIntentYes);
+
 
         //No intent
         Intent noReceive = new Intent();
-       // noReceive.setAction(NO_ACTION);
+        // noReceive.setAction(NO_ACTION);
         PendingIntent pendingIntentNo = PendingIntent.getBroadcast(this, 12345, noReceive, PendingIntent.FLAG_UPDATE_CURRENT);
-        builder.addAction(R.drawable.ic_launcher, "No", pendingIntentNo);
+
+        Notification notificationBeacon = new Notification.Builder(c)
+        .addAction(R.drawable.beacon_gray, "Yes", pendingIntentYes)
+        .addAction(R.drawable.ic_launcher, "No", pendingIntentNo)
+        .setSmallIcon(R.drawable.beacon_gray)
+        .setContentTitle(c.getString(R.string.app_name))
+        .setContentText(msg)
+        .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
+        .build();
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(0, notificationBeacon);
+
+
+
 
 
 
@@ -84,16 +97,13 @@ public class BeaconTrackingService extends Service {
 
 
 
-        builder.setSmallIcon(R.drawable.beacon_gray);
-        builder.setContentTitle(c.getString(R.string.app_name));
-        builder.setContentText(msg);
-        builder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS);
+
     }
 
     public static void stopTrackingListener() {
         try {
             beaconManager.disconnect();
-            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);;
+            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
         } catch (RemoteException e) {
 
         }
