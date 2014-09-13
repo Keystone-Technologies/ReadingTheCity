@@ -45,6 +45,11 @@
         <service
             android:name=".BeaconTrackingService"
             android:exported="false" />
+
+        <activity
+            android:name=".BeaconInfoActivity"
+            android:label="@string/title_activity_beacon_info" >
+        </activity>
     </application>
 
 </manifest>

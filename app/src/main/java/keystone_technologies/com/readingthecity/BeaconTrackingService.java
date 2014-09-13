@@ -2,6 +2,7 @@ package keystone_technologies.com.readingthecity;
 
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -55,10 +56,18 @@ public class BeaconTrackingService extends Service {
     }
 
     public void postNotification(String msg, Context c) {
+      //  if (//check to see if yes/no or should open webview activity) {
+            Intent intent = new Intent(this, BeaconInfoActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+      //  } else {
+
+     //   }
+
+
         Notification.Builder builder = new Notification.Builder(c);
-        NotificationManager notificationManager = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         builder.setSmallIcon(R.drawable.beacon_gray);
         builder.setContentTitle(c.getString(R.string.app_name));
+        builder.setContentIntent(pendingIntent);
         builder.setContentText(msg);
         builder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS);
     }
