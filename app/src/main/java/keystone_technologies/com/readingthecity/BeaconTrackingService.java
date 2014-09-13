@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import android.widget.RemoteViews;
 import android.widget.Toast;
 
 import com.estimote.sdk.Beacon;
@@ -58,15 +59,17 @@ public class BeaconTrackingService extends Service {
 
     public void postNotification(String msg, Context c) {
 
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
         //Yes intent
         Intent yesReceive = new Intent();
-        //yesReceive.setAction(YES_ACTION);
+        yesReceive.setAction(Integer.toString(Constants.YES));
         PendingIntent pendingIntentYes = PendingIntent.getBroadcast(this, 12345, yesReceive, PendingIntent.FLAG_UPDATE_CURRENT);
 
 
         //No intent
         Intent noReceive = new Intent();
-        // noReceive.setAction(NO_ACTION);
+        noReceive.setAction(Integer.toString(Constants.NO));
         PendingIntent pendingIntentNo = PendingIntent.getBroadcast(this, 12345, noReceive, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Notification notificationBeacon = new Notification.Builder(c)
@@ -78,7 +81,11 @@ public class BeaconTrackingService extends Service {
         .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
         .build();
 
-        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        /** set a custom layout to the notification in notification drawer  */
+        RemoteViews notificationView = new RemoteViews(getPackageName(), R.layout.beacon_notification_layout);
+        notification.contentView = notificationView;
+
+
         notificationManager.notify(0, notificationBeacon);
 
 
