@@ -72,18 +72,22 @@ public class BeaconTrackingService extends Service {
         noReceive.setAction(Integer.toString(Constants.NO));
         PendingIntent pendingIntentNo = PendingIntent.getBroadcast(this, 12345, noReceive, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        Notification notificationBeacon = new Notification.Builder(c)
-        .addAction(R.drawable.beacon_gray, "Yes", pendingIntentYes)
-        .addAction(R.drawable.ic_launcher, "No", pendingIntentNo)
-        .setSmallIcon(R.drawable.beacon_gray)
-        .setContentTitle(c.getString(R.string.app_name))
-        .setContentText(msg)
-        .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
-        .build();
+
 
         /** set a custom layout to the notification in notification drawer  */
         RemoteViews notificationView = new RemoteViews(getPackageName(), R.layout.beacon_notification_layout);
-        notification.contentView = notificationView;
+
+
+        Notification notificationBeacon = new Notification.Builder(c)
+                .addAction(R.drawable.beacon_gray, "Yes", pendingIntentYes)
+                .addAction(R.drawable.ic_launcher, "No", pendingIntentNo)
+                .setSmallIcon(R.drawable.beacon_gray)
+                .setContentTitle(c.getString(R.string.app_name))
+                .setContentText(msg)
+                .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
+                .build();
+
+        notificationBeacon.contentView = notificationView;
 
 
         notificationManager.notify(0, notificationBeacon);
