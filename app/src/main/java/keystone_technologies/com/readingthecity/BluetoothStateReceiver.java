@@ -20,12 +20,12 @@ public class BluetoothStateReceiver extends BroadcastReceiver {
                     stopEstimoteService(context);
                     BeaconTrackingService.stopTrackingListener();
                     stopTrackingService(context);
-                    Utilities.postNotification("bluetooth", context);
+                 //   Utilities.postNotification("bluetooth", context);
                     break;
                 case BluetoothAdapter.STATE_ON:
                     startEstimoteService(context);
                     startTrackingService(context);
-                    Utilities.postNotification("bluetooth", context);
+                   // Utilities.postNotification("bluetooth", context);
                     break;
             }
         }

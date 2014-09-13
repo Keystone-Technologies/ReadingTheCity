@@ -23,6 +23,7 @@ public class BeaconTrackingService extends Service {
     private static BeaconManager beaconManager;
     private BeaconDataSource dataSource;
     List<BeaconDevice> beaconList;
+    private Notification notification;
 
 
     @Override
@@ -39,7 +40,7 @@ public class BeaconTrackingService extends Service {
 
         beaconManager = new BeaconManager(this);
 
-        Notification notification = new Notification.Builder(this)
+        notification = new Notification.Builder(this)
         .setSmallIcon(R.drawable.beacon_gray)
         .setContentText("Searching For Beacons")
         .setContentTitle(getString(R.string.app_name))
@@ -56,18 +57,35 @@ public class BeaconTrackingService extends Service {
     }
 
     public void postNotification(String msg, Context c) {
+        Notification.Builder builder = new Notification.Builder(c);
+
+        //Yes intent
+        Intent yesReceive = new Intent();
+        //yesReceive.setAction(YES_ACTION);
+        PendingIntent pendingIntentYes = PendingIntent.getBroadcast(this, 12345, yesReceive, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.addAction(R.drawable.beacon_gray, "Yes", pendingIntentYes);
+
+        //No intent
+        Intent noReceive = new Intent();
+       // noReceive.setAction(NO_ACTION);
+        PendingIntent pendingIntentNo = PendingIntent.getBroadcast(this, 12345, noReceive, PendingIntent.FLAG_UPDATE_CURRENT);
+        builder.addAction(R.drawable.ic_launcher, "No", pendingIntentNo);
+
+
+
+
       //  if (//check to see if yes/no or should open webview activity) {
-            Intent intent = new Intent(this, BeaconInfoActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+            //Intent intent = new Intent(this, BeaconInfoActivity.class);
+            //PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+            //builder.setContentIntent(pendingIntent);
       //  } else {
 
      //   }
 
 
-        Notification.Builder builder = new Notification.Builder(c);
+
         builder.setSmallIcon(R.drawable.beacon_gray);
         builder.setContentTitle(c.getString(R.string.app_name));
-        builder.setContentIntent(pendingIntent);
         builder.setContentText(msg);
         builder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS);
     }
@@ -75,7 +93,7 @@ public class BeaconTrackingService extends Service {
     public static void stopTrackingListener() {
         try {
             beaconManager.disconnect();
-            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
+            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);;
         } catch (RemoteException e) {
 
         }
