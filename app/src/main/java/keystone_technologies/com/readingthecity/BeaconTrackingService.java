@@ -51,7 +51,16 @@ public class BeaconTrackingService extends Service {
         Log.d("Beacon found with UUID:", b.getProximityUUID());
         Toast.makeText(getApplicationContext(), "Beacon found with UUID: " +
                 b.getProximityUUID(), Toast.LENGTH_SHORT).show();
-        Utilities.postNotification("Beacon Found", getApplicationContext());
+        postNotification("Beacon Found", getApplicationContext());
+    }
+
+    public void postNotification(String msg, Context c) {
+        Notification.Builder builder = new Notification.Builder(c);
+        NotificationManager notificationManager = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+        builder.setSmallIcon(R.drawable.beacon_gray);
+        builder.setContentTitle(c.getString(R.string.app_name));
+        builder.setContentText(msg);
+        builder.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS);
     }
 
     public static void stopTrackingListener() {
