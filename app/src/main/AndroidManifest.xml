@@ -39,6 +39,12 @@
             </intent-filter>
         </receiver>
 
+        <receiver android:name=".ResponseListener" >
+            <intent-filter>
+                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name="com.estimote.sdk.service.BeaconService"
             android:exported="false" />

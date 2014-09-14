@@ -8,6 +8,6 @@ public class ResponseListener extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        
+
     }
 }
