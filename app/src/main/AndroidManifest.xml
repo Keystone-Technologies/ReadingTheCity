@@ -38,10 +38,7 @@
                 <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
             </intent-filter>
         </receiver>
-
-        <receiver android:name=".YesButtonListener" >
-
-        </receiver>
+        <receiver android:name=".NotificationButtonListener" />
 
         <service
             android:name="com.estimote.sdk.service.BeaconService"

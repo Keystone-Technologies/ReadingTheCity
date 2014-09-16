@@ -4,10 +4,9 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
+import android.media.Image;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
@@ -32,6 +31,7 @@ public class BeaconTrackingService extends Service {
     List<BeaconDevice> beaconList;
     private Notification notification;
     private ImageButton btnYes;
+    private ImageButton btnNo;
 
 
     @Override
@@ -71,9 +71,15 @@ public class BeaconTrackingService extends Service {
         /** set a custom layout to the notification in notification drawer  */
         RemoteViews notificationView = new RemoteViews(getPackageName(), R.layout.beacon_notification_layout);
 
-       Intent intent = new Intent(c, YesButtonListener.class);
-       PendingIntent pendingIntent = PendingIntent.getBroadcast(c, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-       notificationView.setOnClickPendingIntent(R.id.btnYes, pendingIntent);
+        Intent yesIntent = new Intent(c, NotificationButtonListener.class);
+        yesIntent.setAction("Yes");
+        PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
+
+        Intent noIntent = new Intent(c, NotificationButtonListener.class);
+        noIntent.setAction("No");
+        PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
 
         Notification notificationBeacon = new Notification.Builder(c)
                 .setSmallIcon(R.drawable.beacon_gray)
