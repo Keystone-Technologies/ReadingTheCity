@@ -39,10 +39,8 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".ResponseListener" >
-            <intent-filter>
-                <action android:name="android.bluetooth.adapter.action.STATE_CHANGED" />
-            </intent-filter>
+        <receiver android:name=".YesButtonListener" >
+
         </receiver>
 
         <service
