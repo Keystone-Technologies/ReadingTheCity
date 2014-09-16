@@ -6,6 +6,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.SQLException;
 
+import com.estimote.sdk.Beacon;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,6 +49,16 @@ public class BeaconDataSource {
     public void deleteBeacon(BeaconDevice beacon) {
         String UUID = beacon.getUUID();
         database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_BEACON + " = " + UUID, null);
+    }
+
+    public BeaconDevice getBeaconByUUID(String UUID) {
+        List<BeaconDevice> beacons = getAllBeacons();
+        for (BeaconDevice b : beacons) {
+            if (UUID.equals(b.getUUID())) {
+                return b;
+            }
+        }
+        return null;
     }
 
     public List<BeaconDevice> getAllBeacons() {

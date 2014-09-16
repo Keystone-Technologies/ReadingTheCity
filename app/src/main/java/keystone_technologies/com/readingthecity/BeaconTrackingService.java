@@ -30,8 +30,6 @@ public class BeaconTrackingService extends Service {
     private BeaconDataSource dataSource;
     List<BeaconDevice> beaconList;
     private Notification notification;
-    private ImageButton btnYes;
-    private ImageButton btnNo;
 
 
     @Override
@@ -61,10 +59,10 @@ public class BeaconTrackingService extends Service {
         Log.d("Beacon found with UUID:", b.getProximityUUID());
         Toast.makeText(getApplicationContext(), "Beacon found with UUID: " +
                 b.getProximityUUID(), Toast.LENGTH_SHORT).show();
-        postNotification("Beacon Found", getApplicationContext());
+        postNotification(b, getApplicationContext());
     }
 
-    public void postNotification(String msg, Context c) {
+    public void postNotification(Beacon beacon, Context c) {
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
@@ -73,18 +71,20 @@ public class BeaconTrackingService extends Service {
 
         Intent yesIntent = new Intent(c, NotificationButtonListener.class);
         yesIntent.setAction("Yes");
+        yesIntent.putExtra("uuid", beacon.getProximityUUID());
         PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
 
         Intent noIntent = new Intent(c, NotificationButtonListener.class);
         noIntent.setAction("No");
+        noIntent.putExtra("uuid", beacon.getProximityUUID());
         PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
 
         Notification notificationBeacon = new Notification.Builder(c)
                 .setSmallIcon(R.drawable.beacon_gray)
                 .setContentTitle(c.getString(R.string.app_name))
-                .setContentText(msg)
+                .setContentText("Are you interested in?")
                 .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
                 .build();
 
@@ -137,12 +137,12 @@ public class BeaconTrackingService extends Service {
                                 beaconList = dataSource.getAllBeacons();
 
                                 if (beaconList.size() == 0) {
-                                    dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
+                                    dataSource.createBeacon(beacons.get(0).getProximityUUID(), Constants.NO);
                                     beaconNotify(beacons.get(0));
                                 } else {
                                     for (BeaconDevice b : beaconList) {
                                         if (!b.getUUID().equals(beacons.get(0).getProximityUUID())) {
-                                            dataSource.createBeacon(beacons.get(0).getProximityUUID(), 0);
+                                            dataSource.createBeacon(beacons.get(0).getProximityUUID(), Constants.NO);
                                             beaconNotify(beacons.get(0));
                                         }
                                     }
