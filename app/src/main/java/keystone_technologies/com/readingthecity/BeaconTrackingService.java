@@ -54,13 +54,7 @@ public class BeaconTrackingService extends Service {
         .setContentTitle(getString(R.string.app_name))
         .build();
 
-
-
         startForeground(1, notification);
-
-//        LayoutInflater inflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
-//        View rootView = inflater.inflate(R.layout.beacon_notification_layout, null);
-//        btnYes = (ImageButton) rootView.findViewById(R.id.btnYes);
     }
 
     public void beaconNotify(Beacon b) {
@@ -81,15 +75,6 @@ public class BeaconTrackingService extends Service {
        PendingIntent pendingIntent = PendingIntent.getBroadcast(c, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
        notificationView.setOnClickPendingIntent(R.id.btnYes, pendingIntent);
 
-
-       // notificationView.setOnClickPendingIntent(R.id.btnYes, pendingIntentYes);
-
-
-
-
-
-
-
         Notification notificationBeacon = new Notification.Builder(c)
                 .setSmallIcon(R.drawable.beacon_gray)
                 .setContentTitle(c.getString(R.string.app_name))
@@ -98,26 +83,7 @@ public class BeaconTrackingService extends Service {
                 .build();
 
         notificationBeacon.contentView = notificationView;
-
-
         notificationManager.notify(0, notificationBeacon);
-
-
-
-
-
-
-
-      //  if (//check to see if yes/no or should open webview activity) {
-            //Intent intent = new Intent(this, BeaconInfoActivity.class);
-            //PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
-            //builder.setContentIntent(pendingIntent);
-      //  } else {
-
-     //   }
-
-
-
 
     }
 
