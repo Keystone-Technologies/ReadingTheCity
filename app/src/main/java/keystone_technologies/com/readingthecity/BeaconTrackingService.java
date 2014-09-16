@@ -72,7 +72,7 @@ public class BeaconTrackingService extends Service {
         RemoteViews notificationView = new RemoteViews(getPackageName(), R.layout.beacon_notification_layout);
 
        Intent intent = new Intent(c, YesButtonListener.class);
-       PendingIntent pendingIntent = PendingIntent.getBroadcast(c, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+       PendingIntent pendingIntent = PendingIntent.getBroadcast(c, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
        notificationView.setOnClickPendingIntent(R.id.btnYes, pendingIntent);
 
         Notification notificationBeacon = new Notification.Builder(c)
