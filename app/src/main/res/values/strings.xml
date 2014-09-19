@@ -8,5 +8,6 @@
     <string name="title_activity_beacon_info">BeaconInfoActivity</string>
     <string name="btn_yes">Yes</string>
     <string name="btn_no">No</string>
+    <string name="notification">More info on:</string>
 
 </resources>

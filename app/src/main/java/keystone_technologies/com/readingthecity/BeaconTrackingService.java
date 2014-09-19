@@ -29,8 +29,6 @@ public class BeaconTrackingService extends Service {
     private static BeaconManager beaconManager;
     private BeaconDataSource dataSource;
     List<BeaconDevice> beaconList;
-    private Notification notification;
-
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -46,7 +44,7 @@ public class BeaconTrackingService extends Service {
 
         beaconManager = new BeaconManager(this);
 
-        notification = new Notification.Builder(this)
+        Notification notification = new Notification.Builder(this)
         .setSmallIcon(R.drawable.beacon_gray)
         .setContentText("Searching For Beacons")
         .setContentTitle(getString(R.string.app_name))
@@ -83,13 +81,11 @@ public class BeaconTrackingService extends Service {
 
         Notification notificationBeacon = new Notification.Builder(c)
                 .setSmallIcon(R.drawable.beacon_gray)
-                .setContentTitle(c.getString(R.string.app_name))
-                .setContentText("Are you interested in?")
                 .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
                 .build();
 
         notificationBeacon.contentView = notificationView;
-        notificationManager.notify(0, notificationBeacon);
+        notificationManager.notify(Constants.NOTIFICATION_ID, notificationBeacon);
 
     }
 

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.SQLException;
+import android.util.Log;
 
 import com.estimote.sdk.Beacon;
 
@@ -44,6 +45,73 @@ public class BeaconDataSource {
 //        BeaconDevice newBeacon = cursorToBeacon(cursor);
 //        cursor.close();
 //        return newBeacon;
+    }
+
+//    public int getBeaconResponse(String uuid) {
+//        open();
+//
+//        int response = 0;
+//
+//        String[] result_column = new String[] {ServiceTable.COLUMN_BEACON, ServiceTable.COLUMN_RESPOMSE};
+//        String where = ServiceTable.COLUMN_BEACON + "=" + uuid;
+//
+//        String whereArgs[] = null;
+//        String groupBy = null;
+//        String having = null;
+//        String order = null;
+//
+//        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, result_column, where, whereArgs, groupBy, having, order);
+//        int RESPONSE_INDEX = cursor.getColumnIndexOrThrow(ServiceTable.COLUMN_RESPOMSE);
+//        while (cursor.moveToNext()) {
+//            response = cursor.getInt(RESPONSE_INDEX);
+//        }
+//        cursor.close();
+//        return response;
+//    }
+
+    public void setYesResponse(String uuid) {
+        open();
+
+        ContentValues values = new ContentValues();
+
+        //if (getBeaconResponse(uuid) == 0) {
+            values.put(ServiceTable.COLUMN_RESPOMSE, 1);
+        //} else {
+        //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
+       // }
+
+        String where = ServiceTable.COLUMN_BEACON + "=?";
+        String whereArgs[] = new String[] {uuid};
+
+        try {
+            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+        } catch (SQLException e) {
+            Log.e("Error", e.toString());
+        }
+
+        database.close();
+    }
+
+    public void setNoResponse(String uuid) {
+        open();
+
+        ContentValues values = new ContentValues();
+
+        //if (getBeaconResponse(uuid) == 0) {
+        values.put(ServiceTable.COLUMN_RESPOMSE, 0);
+        //} else {
+        //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
+        // }
+
+        String where = ServiceTable.COLUMN_BEACON + "=?";
+        String whereArgs[] = new String[] {uuid};
+
+        try {
+            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+        } catch (SQLException e) {
+            Log.e("Error", e.toString());
+        }
+        database.close();
     }
 
     public void deleteBeacon(BeaconDevice beacon) {
