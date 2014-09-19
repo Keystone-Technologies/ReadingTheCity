@@ -51,6 +51,10 @@
             android:name=".BeaconInfoActivity"
             android:label="@string/title_activity_beacon_info" >
         </activity>
+        <activity
+            android:name=".SettingsActivity"
+            android:label="@string/title_activity_settings" >
+        </activity>
     </application>
 
 </manifest>
