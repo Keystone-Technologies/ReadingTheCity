@@ -1,7 +1,9 @@
 package keystone_technologies.com.readingthecity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 
 public class MainActivity extends Activity {
 
@@ -21,5 +23,10 @@ public class MainActivity extends Activity {
             BluetoothStateReceiver.startEstimoteService(this);
             BluetoothStateReceiver.startTrackingService(this);
         }
+    }
+
+    public void settings(View v) {
+        Intent settingsIntent = new Intent(this, SettingsActivity.class );
+        startActivity(settingsIntent);
     }
 }
