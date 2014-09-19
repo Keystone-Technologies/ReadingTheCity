@@ -10,4 +10,5 @@ public class Constants {
     public static final Region ALL_ESTIMOTE_BEACONS_REGION = new Region("rid", null, null, null);
     public static final int YES = 1;
     public static final int NO = 0;
+    public static final String BEACON_INFO_URL = "http://";
 }

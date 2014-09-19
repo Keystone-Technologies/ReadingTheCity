@@ -55,6 +55,9 @@ public class BeaconTrackingService extends Service {
 
     public void beaconNotify(Beacon b) {
         Log.d("Beacon found with UUID:", b.getProximityUUID());
+
+
+
         Toast.makeText(getApplicationContext(), "Beacon found with UUID: " +
                 b.getProximityUUID(), Toast.LENGTH_SHORT).show();
         postNotification(b, getApplicationContext());
