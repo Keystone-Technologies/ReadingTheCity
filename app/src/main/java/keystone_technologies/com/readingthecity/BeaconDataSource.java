@@ -114,20 +114,20 @@ public class BeaconDataSource {
         database.close();
     }
 
-    public void deleteBeacon(BeaconDevice beacon) {
-        String UUID = beacon.getUUID();
-        database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_BEACON + " = " + UUID, null);
-    }
+//    public void deleteBeacon(BeaconDevice beacon) {
+//        String UUID = beacon.getUUID();
+//        database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_BEACON + " = " + UUID, null);
+//    }
 
-    public BeaconDevice getBeaconByUUID(String UUID) {
-        List<BeaconDevice> beacons = getAllBeacons();
-        for (BeaconDevice b : beacons) {
-            if (UUID.equals(b.getUUID())) {
-                return b;
-            }
-        }
-        return null;
-    }
+//    public BeaconDevice getBeaconByUUID(String UUID) {
+//        List<BeaconDevice> beacons = getAllBeacons();
+//        for (BeaconDevice b : beacons) {
+//            if (UUID.equals(b.getUUID())) {
+//                return b;
+//            }
+//        }
+//        return null;
+//    }
 
     public List<BeaconDevice> getAllBeacons() {
         List<BeaconDevice> beacons = new ArrayList<BeaconDevice>();
@@ -148,9 +148,9 @@ public class BeaconDataSource {
     }
 
     private BeaconDevice cursorToBeacon(Cursor cursor) {
-        BeaconDevice beacon = new BeaconDevice();
-        beacon.setUUID(cursor.getString(0));
-        beacon.setResponse(cursor.getInt(1));
-        return beacon;
+       // BeaconDevice beacon = new BeaconDevice();
+       // beacon.setUUID(cursor.getString(0));
+       // beacon.setResponse(cursor.getInt(1));
+        return null;
     }
 }

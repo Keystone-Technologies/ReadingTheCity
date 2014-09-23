@@ -1,20 +1,22 @@
 package keystone_technologies.com.readingthecity;
 
+import java.util.Date;
+
 public class BeaconDevice {
 
-    private String UUID;
     private int response;
     private String major;
     private String minor;
     private String name;
     private String parent;
+    private Date date;
 
-    public String getUUID() {
-        return UUID;
-    }
-
-    public void setUUID(String UUID) {
-        this.UUID = UUID;
+    public BeaconDevice(String major, String minor, String name, String parent, Date date) {
+        this.major = major;
+        this.minor = minor;
+        this.name = name;
+        this.parent = parent;
+        this.date = date;
     }
 
     public int getResponse() {
@@ -55,5 +57,13 @@ public class BeaconDevice {
 
     public String getParent() {
         return parent;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
+    }
+
+    public Date getDate() {
+        return date;
     }
 }

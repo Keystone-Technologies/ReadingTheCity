@@ -106,9 +106,25 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
     protected void onPostExecute(String result) {
 
         try {
-            FileOutputStream fos = context.openFileOutput("beaconStorage", Context.MODE_APPEND);
-            fos.write(result.getBytes());
-            fos.close();
+            JSONObject jsonObject = new JSONObject(result);
+            JSONArray jsonArray = jsonObject.getJSONArray("rows");
+
+            JSONObject row = jsonArray.getJSONObject(0);
+            JSONObject value = row.getJSONObject("value");
+
+            String parentId = value.get("parent").toString();
+
+
+
+
+
+
+
+
+
+//            FileOutputStream fos = context.openFileOutput("beaconStorage", Context.MODE_APPEND);
+//            fos.write(result.getBytes());
+//            fos.close();
         } catch (Exception e) {
 
         }
