@@ -133,19 +133,31 @@ public class BeaconTrackingService extends Service {
                         public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
 
                             if (beacons.size() > 0) {
-                                beaconList = dataSource.getAllBeacons();
+                                //beaconList = dataSource.getAllBeacons();
 
-                                if (beaconList.size() == 0) {
-                                    dataSource.createBeacon(beacons.get(0).getProximityUUID(), Constants.NO);
-                                    beaconNotify(beacons.get(0));
-                                } else {
-                                    for (BeaconDevice b : beaconList) {
-                                        if (!b.getUUID().equals(beacons.get(0).getProximityUUID())) {
-                                            dataSource.createBeacon(beacons.get(0).getProximityUUID(), Constants.NO);
-                                            beaconNotify(beacons.get(0));
-                                        }
-                                    }
-                                }
+                                int[] majorMinorValues = new int[2];
+                                majorMinorValues[0] = beacons.get(0).getMajor();
+                                majorMinorValues[1] = beacons.get(0).getMinor();
+
+                                new GetBeaconInfo(majorMinorValues, getApplicationContext()).execute();
+
+
+                                //beaconNotify(beacons.get(0));
+
+//                                if (beaconList.size() == 0) {
+//                                    dataSource.createBeacon(beacons.get(0).getProximityUUID(), Constants.NO);
+//                                    beaconNotify(beacons.get(0));
+//                                } else {
+//                                    for (BeaconDevice b : beaconList) {
+//                                        if (!b.getMajor().equals(beacons.get(0).getMajor())) {
+//
+//                                        }
+//                                        if (!b.getMinor().equals(beacons.get(0).getMinor())) {
+//                                            dataSource.createBeacon(beacons.get(0).getProximityUUID(), Constants.NO);
+//                                            beaconNotify(beacons.get(0));
+//                                        }
+//                                    }
+//                                }
                             }
                         }
                     });
