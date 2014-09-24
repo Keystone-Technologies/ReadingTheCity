@@ -30,13 +30,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
-public class GetBeaconDetails extends AsyncTask<Void, Void, String> {
+public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements Serializable {
 
     private String parentId;
     private StringBuilder sb = null;
@@ -159,20 +161,11 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> {
 
     private void serializeBeaconList(ArrayList<BeaconDevice> beaconList) {
         try {
-            File f = new File("beaconStorage");
-            if (f.exists() && !f.isDirectory()) {
-                FileOutputStream fileOut = context.openFileOutput("beaconStorage", Context.MODE_PRIVATE);
-                ObjectOutputStream out = new ObjectOutputStream(fileOut);
-                out.writeObject(beaconList);
-                out.close();
-                fileOut.close();
-            } else {
-                FileOutputStream fileOut = context.openFileOutput("beaconStorage", Context.MODE_PRIVATE);
-                ObjectOutputStream out = new ObjectOutputStream(fileOut);
-                out.writeObject(beaconList);
-                out.close();
-                fileOut.close();
-            }
+            FileOutputStream fileOut = context.openFileOutput("beaconStorage", Context.MODE_PRIVATE);
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(beaconList);
+            out.close();
+            fileOut.close();
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -181,28 +174,18 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> {
     private ArrayList<BeaconDevice> getBeaconListDeserialized() {
         ArrayList<BeaconDevice> beaconList = new ArrayList<BeaconDevice>();
         try {
-           // File f = new File("beaconStorage");
-           // if (f.exists() && !f.isDirectory()) {
-            FileInputStream in = context.openFileInput("beaconStorage");
-            ObjectInputStream objectInputStream = new ObjectInputStream(in);
+            FileInputStream fileIn = context.openFileInput("beaconStorage");
+            BufferedInputStream buffer = new BufferedInputStream(fileIn);
+            ObjectInputStream in = new ObjectInputStream(buffer);
 
-            //InputStreamReader reader = new InputStreamReader(in);
-            //BufferedReader buf = new BufferedReader(reader);
+            beaconList = (ArrayList<BeaconDevice>)in.readObject();
 
-            while (objectInputStream.readObject() != null ) {
-                BeaconDevice beacon = (BeaconDevice) objectInputStream.readObject();
-                beaconList.add(beacon);
+            for (BeaconDevice b : beaconList) {
+                System.out.println("Deserialized data: \n" + b.getName());
             }
 
-//                BufferedInputStream buf = new BufferedInputStream(new FileInputStream("beaconStorage"));
-//                //FileInputStream fileInput = context.openFileInput("beaconStorage");
-//
-//                while (in.available() != 0) {
-//                    BeaconDevice beacon = (BeaconDevice) in.readObject();
-//                    beaconList.add(beacon);
-//                }
-                in.close();
-           // }
+            in.close();
+            fileIn.close();
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (ClassNotFoundException ex) {
