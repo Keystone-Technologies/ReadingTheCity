@@ -114,7 +114,7 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
 
             if (!value.isNull("parent")) {
                 new GetBeaconDetails(value.get("parent").toString(),
-                        value.get("major").toString(), value.get("minor").toString()).execute();
+                        value.get("major").toString(), value.get("minor").toString(), context).execute();
             }
 
 

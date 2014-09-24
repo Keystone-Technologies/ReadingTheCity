@@ -1,6 +1,7 @@
 package keystone_technologies.com.readingthecity;
 
 import java.io.Serializable;
+import java.util.Date;
 
 public class BeaconDevice implements Serializable {
 
@@ -9,11 +10,11 @@ public class BeaconDevice implements Serializable {
     private String minor;
     private String name;
     private String parent;
-    private String date;
+    private Date date;
     private String url;
     private String description;
 
-    public BeaconDevice(String major, String minor, String name, String parent, String date, String url, String description) {
+    public BeaconDevice(String major, String minor, String name, String parent, Date date, String url, String description) {
         this.major = major;
         this.minor = minor;
         this.name = name;
@@ -63,11 +64,11 @@ public class BeaconDevice implements Serializable {
         return parent;
     }
 
-    public void setDate(String date) {
+    public void setDate(Date date) {
         this.date = date;
     }
 
-    public String getDate() {
+    public Date getDate() {
         return date;
     }
 
