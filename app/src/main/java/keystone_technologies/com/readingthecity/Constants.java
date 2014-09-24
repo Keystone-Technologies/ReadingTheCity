@@ -11,4 +11,5 @@ public class Constants {
     public static final int YES = 1;
     public static final int NO = 0;
     public static final String BEACON_QUERY = "http://couchdb.dev.kit.cm/rtc/_design/lookup/_view/beacon";
+    public static final String BEACON_DETAILS = "http://couchdb.dev.kit.cm/rtc/_design/lookup/_view/details";
 }

@@ -112,7 +112,10 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
             JSONObject row = jsonArray.getJSONObject(0);
             JSONObject value = row.getJSONObject("value");
 
-            String parentId = value.get("parent").toString();
+            if (!value.isNull("parent")) {
+                new GetBeaconDetails(value.get("parent").toString()).execute();
+            }
+
 
 
 
