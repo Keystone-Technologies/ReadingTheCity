@@ -1,22 +1,26 @@
 package keystone_technologies.com.readingthecity;
 
-import java.util.Date;
+import java.io.Serializable;
 
-public class BeaconDevice {
+public class BeaconDevice implements Serializable {
 
     private int response;
     private String major;
     private String minor;
     private String name;
     private String parent;
-    private Date date;
+    private String date;
+    private String url;
+    private String description;
 
-    public BeaconDevice(String major, String minor, String name, String parent, Date date) {
+    public BeaconDevice(String major, String minor, String name, String parent, String date, String url, String description) {
         this.major = major;
         this.minor = minor;
         this.name = name;
         this.parent = parent;
         this.date = date;
+        this.url = url;
+        this.description = description;
     }
 
     public int getResponse() {
@@ -59,11 +63,27 @@ public class BeaconDevice {
         return parent;
     }
 
-    public void setDate(Date date) {
+    public void setDate(String date) {
         this.date = date;
     }
 
-    public Date getDate() {
+    public String getDate() {
         return date;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }

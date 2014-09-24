@@ -21,16 +21,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class GetBeaconDetails extends AsyncTask<Void, Void, String> {
 
     private String parentId;
     private StringBuilder sb = null;
+    private String major;
+    private String minor;
 
     public GetBeaconDetails(String parentId) {
         super();
         this.parentId = parentId;
+    }
+
+    public GetBeaconDetails(String parentId, String major, String minor) {
+        super();
+        this.parentId = parentId;
+        this.major = major;
+        this.minor = minor;
     }
 
     @Override
@@ -80,6 +92,42 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> {
     }
 
     protected void onPostExecute(String result) {
+        try {
+            JSONObject jsonObject = new JSONObject(result);
+            JSONArray jsonArray = jsonObject.getJSONArray("rows");
 
+            JSONObject row = jsonArray.getJSONObject(0);
+            JSONObject value = row.getJSONObject("value");
+
+            if (!value.isNull("parent")) {
+                DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                Date date = new Date();
+                BeaconDevice beacon = new BeaconDevice(major, minor, value.get("name").toString(),
+                        value.get("parent").toString(), dateFormat.format(date),
+                        value.get("url").toString(), value.get("description").toString());
+                new GetBeaconDetails(value.get("parent").toString()).execute();
+            } else {
+                DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                Date date = new Date();
+                BeaconDevice beacon = new BeaconDevice(major, minor, value.get("name").toString(),
+                        value.get("parent").toString(), dateFormat.format(date),
+                        value.get("url").toString(), value.get("description").toString());
+            }
+
+
+
+
+
+
+
+
+
+
+//            FileOutputStream fos = context.openFileOutput("beaconStorage", Context.MODE_APPEND);
+//            fos.write(result.getBytes());
+//            fos.close();
+        } catch (Exception e) {
+
+        }
     }
 }
