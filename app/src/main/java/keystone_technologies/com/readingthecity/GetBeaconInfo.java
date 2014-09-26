@@ -6,6 +6,8 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
 
+import com.estimote.sdk.Beacon;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -31,18 +33,19 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
 
-    private int[] majorMinorArray;
     private static ProgressDialog dialog;
     private Context context;
     private InputStream is = null;
     private StringBuilder sb = null;
+    private Beacon beacon;
 
-    public GetBeaconInfo(int[] majorMinorArray, Context context) {
+    public GetBeaconInfo(Beacon beacon, Context context) {
         super();
-        this.majorMinorArray = majorMinorArray;
+        this.beacon = beacon;
         this.context = context;
     }
 
@@ -66,8 +69,8 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
         try {
 
             JSONArray jsonArray = new JSONArray();
-            jsonArray.put(majorMinorArray[0]);
-            jsonArray.put(majorMinorArray[1]);
+            jsonArray.put(beacon.getMajor());
+            jsonArray.put(beacon.getMinor());
             jsonObject.put("key", jsonArray);
 
             HttpClient httpclient = new DefaultHttpClient();
@@ -104,7 +107,7 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
     }
 
     protected void onPostExecute(String result) {
-
+       // Date date = new Date();
         try {
             JSONObject jsonObject = new JSONObject(result);
             JSONArray jsonArray = jsonObject.getJSONArray("rows");
@@ -117,20 +120,20 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
                         value.get("major").toString(), value.get("minor").toString(), context).execute();
             }
 
-
-
-
-
-
-
-
+//            BeaconDevice beacon = new BeaconDevice(value.get("major").toString(),
+//                    value.get("minor").toString(), value.get("name").toString(),
+//                    value.get("parent").toString(), date,
+//                    value.get("url").toString(), value.get("description").toString(), Constants.NO);
+//
+//            BeaconTrackingService.addToBeaconList(beacon);
+//            BeaconTrackingService.serializeBeaconList();
 
 
 //            FileOutputStream fos = context.openFileOutput("beaconStorage", Context.MODE_APPEND);
 //            fos.write(result.getBytes());
 //            fos.close();
         } catch (Exception e) {
-
+            e.printStackTrace();
         }
 
 //        try {

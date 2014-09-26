@@ -14,7 +14,13 @@ public class BeaconDevice implements Serializable {
     private String url;
     private String description;
 
-    public BeaconDevice(String major, String minor, String name, String parent, Date date, String url, String description) {
+    public BeaconDevice(String major, String minor, Date date) {
+        this.major = major;
+        this.minor = minor;
+        this.date = date;
+    }
+
+    public BeaconDevice(String major, String minor, String name, String parent, Date date, String url, String description, int response) {
         this.major = major;
         this.minor = minor;
         this.name = name;
@@ -22,6 +28,7 @@ public class BeaconDevice implements Serializable {
         this.date = date;
         this.url = url;
         this.description = description;
+        this.response = response;
     }
 
     public int getResponse() {

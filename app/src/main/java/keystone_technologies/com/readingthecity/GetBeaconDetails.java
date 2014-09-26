@@ -106,9 +106,7 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
     }
 
     protected void onPostExecute(String result) {
-        ArrayList<BeaconDevice> beaconList = new ArrayList<BeaconDevice>();
         Date date = new Date();
-        //DateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         try {
             JSONObject jsonObject = new JSONObject(result);
             JSONArray jsonArray = jsonObject.getJSONArray("rows");
@@ -117,80 +115,18 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
             JSONObject value = row.getJSONObject("value");
 
             if (!value.isNull("parent")) {
-                BeaconDevice beacon = new BeaconDevice(major, minor, value.get("name").toString(),
-                        value.get("parent").toString(), date,
-                        value.get("url").toString(), value.get("description").toString());
                 new GetBeaconDetails(value.get("parent").toString()).execute();
-                beaconList = getBeaconListDeserialized();
-                if (beaconList.size() == 0) {
-                    beaconList.add(beacon);
-                } else {
-                    for (BeaconDevice b : beaconList) {
-                        if (beacon.getMajor().equals(b.getMajor()) && beacon.getMinor().equals(b.getMinor())) {
-                            if (beacon.getDate().compareTo(b.getDate()) >= 0) {
-                                beaconList.remove(b);
-                                beaconList.add(beacon);
-                            }
-                        }
-                    }
-                }
-                serializeBeaconList(beaconList);
-            } else {
-                BeaconDevice beacon = new BeaconDevice(major, minor, value.get("name").toString(),
-                        value.get("parent").toString(), date,
-                        value.get("url").toString(), value.get("description").toString());
-                beaconList = getBeaconListDeserialized();
-                if (beaconList.size() == 0) {
-                    beaconList.add(beacon);
-                } else {
-                    for (BeaconDevice b : beaconList) {
-                        if (beacon.getMajor().equals(b.getMajor()) && beacon.getMinor().equals(b.getMinor())) {
-                            if (beacon.getDate().compareTo(b.getDate()) >= 0) {
-                                beaconList.remove(b);
-                                beaconList.add(beacon);
-                            }
-                        }
-                    }
-                }
-                serializeBeaconList(beaconList);
             }
+
+            BeaconDevice beacon = new BeaconDevice(major, minor, value.get("name").toString(),
+                        value.get("parent").toString(), date,
+                        value.get("url").toString(), value.get("description").toString(), Constants.NO);
+
+            BeaconTrackingService.addToBeaconList(beacon);
+            BeaconTrackingService.serializeBeaconList();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void serializeBeaconList(ArrayList<BeaconDevice> beaconList) {
-        try {
-            FileOutputStream fileOut = context.openFileOutput("beaconStorage", Context.MODE_PRIVATE);
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(beaconList);
-            out.close();
-            fileOut.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private ArrayList<BeaconDevice> getBeaconListDeserialized() {
-        ArrayList<BeaconDevice> beaconList = new ArrayList<BeaconDevice>();
-        try {
-            FileInputStream fileIn = context.openFileInput("beaconStorage");
-            BufferedInputStream buffer = new BufferedInputStream(fileIn);
-            ObjectInputStream in = new ObjectInputStream(buffer);
-
-            beaconList = (ArrayList<BeaconDevice>)in.readObject();
-
-            for (BeaconDevice b : beaconList) {
-                System.out.println("Deserialized data: \n" + b.getName());
-            }
-
-            in.close();
-            fileIn.close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } catch (ClassNotFoundException ex) {
-            ex.printStackTrace();
-        }
-        return beaconList;
     }
 }

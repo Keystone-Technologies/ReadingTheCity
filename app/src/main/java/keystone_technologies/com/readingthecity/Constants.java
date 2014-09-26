@@ -12,4 +12,6 @@ public class Constants {
     public static final int NO = 0;
     public static final String BEACON_QUERY = "http://couchdb.dev.kit.cm/rtc/_design/lookup/_view/beacon";
     public static final String BEACON_DETAILS = "http://couchdb.dev.kit.cm/rtc/_design/lookup/_view/details";
+    public static final String FILEPATH = "/data/data/keystone_technologies.com.readingthecity/files/beaconStorage";
+    public static final int MILLIS_PER_DAY = 86400000;
 }

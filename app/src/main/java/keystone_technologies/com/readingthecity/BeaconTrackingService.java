@@ -21,14 +21,24 @@ import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class BeaconTrackingService extends Service {
 
     private static BeaconManager beaconManager;
-    private BeaconDataSource dataSource;
-    List<BeaconDevice> beaconList;
+    private static List<BeaconDevice> beaconList;
+    private static Context context;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -39,7 +49,7 @@ public class BeaconTrackingService extends Service {
     public void onCreate() {
         Toast.makeText(this, "Service created!", Toast.LENGTH_LONG).show();
 
-        dataSource = new BeaconDataSource(this);
+        context = this;
         beaconList = new ArrayList<BeaconDevice>();
 
         beaconManager = new BeaconManager(this);
@@ -51,6 +61,10 @@ public class BeaconTrackingService extends Service {
         .build();
 
         startForeground(1, notification);
+    }
+
+    public static void addToBeaconList(BeaconDevice beacon) {
+        beaconList.add(beacon);
     }
 
     public void beaconNotify(Beacon b) {
@@ -133,37 +147,104 @@ public class BeaconTrackingService extends Service {
                         public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
 
                             if (beacons.size() > 0) {
-                                //beaconList = dataSource.getAllBeacons();
+                                Date date = new Date();
+                                for (Beacon b : beacons) {
+                                    beaconList = getBeaconListDeserialized();
+                                    BeaconDevice bd = new BeaconDevice(String.valueOf(b.getMajor()),
+                                            String.valueOf(b.getMinor()), date);
+                                    if (beaconList.isEmpty()) {
+                                        beaconList.add(bd);
+                                        serializeBeaconList();
+                                    } else {
+                                        if (compareBeaconToList(bd)) {
+                                            beaconList.add(bd);
+                                            serializeBeaconList();
+                                        }
+                                    }
 
-                                int[] majorMinorValues = new int[2];
-                                majorMinorValues[0] = beacons.get(0).getMajor();
-                                majorMinorValues[1] = beacons.get(0).getMinor();
+                                       // new GetBeaconInfo(b, getApplicationContext()).execute();
 
-                                new GetBeaconInfo(majorMinorValues, getApplicationContext()).execute();
-
+                                }
+                            }
 
                                 //beaconNotify(beacons.get(0));
 
-//                                if (beaconList.size() == 0) {
-//                                    dataSource.createBeacon(beacons.get(0).getProximityUUID(), Constants.NO);
-//                                    beaconNotify(beacons.get(0));
-//                                } else {
-//                                    for (BeaconDevice b : beaconList) {
-//                                        if (!b.getMajor().equals(beacons.get(0).getMajor())) {
-//
-//                                        }
-//                                        if (!b.getMinor().equals(beacons.get(0).getMinor())) {
-//                                            dataSource.createBeacon(beacons.get(0).getProximityUUID(), Constants.NO);
-//                                            beaconNotify(beacons.get(0));
-//                                        }
-//                                    }
-//                                }
-                            }
                         }
                     });
             }
         });
 
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private ArrayList<BeaconDevice> getBeaconListDeserialized() {
+            ArrayList<BeaconDevice> beaconListTemp = new ArrayList<BeaconDevice>();
+            try {
+               // File file = new File(context.getFilesDir().getAbsolutePath() + Constants.FILEPATH);
+                //if (file.exists()) {
+                    FileInputStream fileIn = context.openFileInput("beaconStorage");
+                    BufferedInputStream buffer = new BufferedInputStream(fileIn);
+                    ObjectInputStream in = new ObjectInputStream(buffer);
+
+                    beaconListTemp = (ArrayList<BeaconDevice>)in.readObject();
+
+                    for (BeaconDevice b : beaconListTemp) {
+                        System.out.println("Deserialized data: \n" + b.getName());
+                    }
+
+                    in.close();
+                    fileIn.close();
+               // }
+
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            } catch (ClassNotFoundException ex) {
+                ex.printStackTrace();
+            }
+            return beaconListTemp;
+    }
+
+    public static void serializeBeaconList() {
+        try {
+            FileOutputStream fileOut = context.openFileOutput("beaconStorage", MODE_PRIVATE);
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(beaconList);
+            out.close();
+            fileOut.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private boolean compareBeaconToList(BeaconDevice beacon) {
+
+        boolean retVal = false;
+        for (BeaconDevice bd : beaconList) {
+            if (bd.getMajor().equals(beacon.getMajor())) {
+                if (bd.getMinor().equals(beacon.getMinor())) {
+                    if (!isSameDay(bd.getDate(), beacon.getDate())) {
+                        beaconList.remove(bd);
+                        retVal = true;
+                        break;
+                    } else {
+                        retVal = false;
+                        break;
+                    }
+                } else {
+                    retVal = true;
+                }
+            } else {
+                retVal = true;
+            }
+        }
+        return retVal;
+    }
+
+    private static boolean isSameDay(Date date1, Date date2) {
+        long julianDayNumber1 = date1.getTime() / Constants.MILLIS_PER_DAY;
+        long julianDayNumber2 = date2.getTime() / Constants.MILLIS_PER_DAY;
+
+        // If they now are equal then it is the same day.
+        return julianDayNumber1 == julianDayNumber2;
     }
 }
