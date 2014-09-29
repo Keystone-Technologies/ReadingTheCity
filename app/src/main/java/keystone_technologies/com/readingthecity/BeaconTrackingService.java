@@ -38,6 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 public class BeaconTrackingService extends Service {
 
@@ -80,7 +81,7 @@ public class BeaconTrackingService extends Service {
 //        postNotification(b, this.getApplicationContext());
 //    }
 
-    public static void postNotification(BeaconDevice beacon, Context c) {
+    public static void postNotification(BeaconDevice beacon, Context c, int notificationId) {
 
         NotificationManager notificationManager = (NotificationManager) c.getSystemService(NOTIFICATION_SERVICE);
 
@@ -92,12 +93,14 @@ public class BeaconTrackingService extends Service {
         Intent yesIntent = new Intent(c, NotificationButtonListener.class);
         yesIntent.setAction("Yes");
         yesIntent.putExtra("id", beacon.getId());
+        yesIntent.putExtra("notificationId", notificationId);
         PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
 
         Intent noIntent = new Intent(c, NotificationButtonListener.class);
         noIntent.setAction("No");
         noIntent.putExtra("id", beacon.getId());
+        yesIntent.putExtra("notificationId", notificationId);
         PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
 
@@ -107,7 +110,7 @@ public class BeaconTrackingService extends Service {
                 .build();
 
         notificationBeacon.contentView = notificationView;
-        notificationManager.notify(Constants.NOTIFICATION_ID, notificationBeacon);
+        notificationManager.notify(notificationId, notificationBeacon);
 
     }
 

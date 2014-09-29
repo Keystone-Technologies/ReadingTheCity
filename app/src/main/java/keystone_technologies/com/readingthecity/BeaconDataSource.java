@@ -20,7 +20,7 @@ public class BeaconDataSource {
     private SQLiteDatabase database;
     private ServiceTable dbServiceTable;
     private String[] allColumns = { ServiceTable.COLUMN_MAJOR, ServiceTable.COLUMN_MINOR,
-            ServiceTable.COLUMN_DATE, ServiceTable.COLUMN_ID, ServiceTable.COLUMN_PARENT, ServiceTable.COLUMN_RESPOMSE };
+            ServiceTable.COLUMN_DATE, ServiceTable.COLUMN_NAME, ServiceTable.COLUMN_ID, ServiceTable.COLUMN_PARENT, ServiceTable.COLUMN_RESPOMSE };
 
     public BeaconDataSource(Context context) {
         dbServiceTable = new ServiceTable(context);
