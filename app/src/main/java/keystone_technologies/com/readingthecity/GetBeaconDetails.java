@@ -114,8 +114,11 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
                 fos.write(result.getBytes());
                 fos.close();
                 JSONObject value = row.getJSONObject("value");
+                BeaconDataSource dataSource = new BeaconDataSource(context);
+                dataSource.setId(major, minor, value.getString("_id"));
+                dataSource.setName(value.getString("_id"), value.getString("name"));
                 BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id"),
-                        value.getString("name")), context, i);
+                        value.getString("name")), context, i+1);
 
             }
 

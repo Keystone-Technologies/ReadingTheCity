@@ -1,5 +1,6 @@
 package keystone_technologies.com.readingthecity;
 
+import android.app.Service;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -98,22 +99,39 @@ public class BeaconDataSource {
         database.close();
     }
 
-//    public void setId(int major, int minor, String id) {
-//        open();
-//
-//        ContentValues values = new ContentValues();
-//        values.put(ServiceTable.COLUMN_ID, id);
-//
-//        String where = ServiceTable.COLUMN_MAJOR + "=?" + " AND " + ServiceTable.COLUMN_MINOR + "=?";
-//        String whereArgs[] = new String[] {String.valueOf(major), String.valueOf(minor)};
-//
-//        try {
-//            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
-//        } catch (SQLException ex) {
-//            ex.printStackTrace();
-//        }
-//        database.close();
-//    }
+    public void setId(int major, int minor, String id) {
+        open();
+
+        ContentValues values = new ContentValues();
+        values.put(ServiceTable.COLUMN_ID, id);
+
+        String where = ServiceTable.COLUMN_MAJOR + "=?" + " AND " + ServiceTable.COLUMN_MINOR + "=?";
+        String whereArgs[] = new String[] {String.valueOf(major), String.valueOf(minor)};
+
+        try {
+            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        database.close();
+    }
+
+    public void setName(String id, String name) {
+        open();
+
+        ContentValues values = new ContentValues();
+        values.put(ServiceTable.COLUMN_NAME, name);
+
+        String where = ServiceTable.COLUMN_ID + "=?";
+        String whereArgs[] = new String[] {String.valueOf(id)};
+
+        try {
+            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        database.close();
+    }
 
     public void setNoResponse(String id) {
         open();
