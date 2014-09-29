@@ -52,7 +52,7 @@ public class SettingsActivity extends ListActivity {
             Switch s = (Switch) v.findViewById(R.id.beaconName);
 
             if (s != null) {
-                //s.setText(items.get(position).getUUID());
+                s.setText(items.get(position).getName());
                 s.setChecked(items.get(position).getResponse() != 0);
                 s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                     @Override

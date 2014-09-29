@@ -9,14 +9,18 @@ import android.util.Log;
 
 import com.estimote.sdk.Beacon;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class BeaconDataSource {
 
     private SQLiteDatabase database;
     private ServiceTable dbServiceTable;
-    private String[] allColumns = { ServiceTable.COLUMN_BEACON, ServiceTable.COLUMN_RESPOMSE };
+    private String[] allColumns = { ServiceTable.COLUMN_MAJOR, ServiceTable.COLUMN_MINOR,
+            ServiceTable.COLUMN_DATE, ServiceTable.COLUMN_ID, ServiceTable.COLUMN_PARENT, ServiceTable.COLUMN_RESPOMSE };
 
     public BeaconDataSource(Context context) {
         dbServiceTable = new ServiceTable(context);
@@ -30,10 +34,12 @@ public class BeaconDataSource {
         dbServiceTable.close();
     }
 
-    public void createBeacon(String UUID, int response) {
+    public void createBeacon(int major, int minor, String date, int response) {
         open();
         ContentValues values = new ContentValues();
-        values.put(ServiceTable.COLUMN_BEACON, UUID);
+        values.put(ServiceTable.COLUMN_MAJOR, major);
+        values.put(ServiceTable.COLUMN_MINOR, minor);
+        values.put(ServiceTable.COLUMN_DATE, date);
         values.put(ServiceTable.COLUMN_RESPOMSE, response);
 
         database.insert(ServiceTable.TABLE_SERVICE, null, values);
@@ -47,29 +53,29 @@ public class BeaconDataSource {
 //        return newBeacon;
     }
 
-//    public int getBeaconResponse(String uuid) {
-//        open();
-//
-//        int response = 0;
-//
-//        String[] result_column = new String[] {ServiceTable.COLUMN_BEACON, ServiceTable.COLUMN_RESPOMSE};
-//        String where = ServiceTable.COLUMN_BEACON + "=" + uuid;
-//
-//        String whereArgs[] = null;
-//        String groupBy = null;
-//        String having = null;
-//        String order = null;
-//
-//        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, result_column, where, whereArgs, groupBy, having, order);
-//        int RESPONSE_INDEX = cursor.getColumnIndexOrThrow(ServiceTable.COLUMN_RESPOMSE);
-//        while (cursor.moveToNext()) {
-//            response = cursor.getInt(RESPONSE_INDEX);
-//        }
-//        cursor.close();
-//        return response;
-//    }
+    public int getBeaconResponse(String id) {
+        open();
 
-    public void setYesResponse(String uuid) {
+        int response = 0;
+
+        String[] result_column = new String[] {ServiceTable.COLUMN_ID, ServiceTable.COLUMN_RESPOMSE};
+        String where = ServiceTable.COLUMN_ID + "=" + id;
+
+        String whereArgs[] = null;
+        String groupBy = null;
+        String having = null;
+        String order = null;
+
+        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, result_column, where, whereArgs, groupBy, having, order);
+        int RESPONSE_INDEX = cursor.getColumnIndexOrThrow(ServiceTable.COLUMN_RESPOMSE);
+        while (cursor.moveToNext()) {
+            response = cursor.getInt(RESPONSE_INDEX);
+        }
+        cursor.close();
+        return response;
+    }
+
+    public void setYesResponse(String id) {
         open();
 
         ContentValues values = new ContentValues();
@@ -80,8 +86,8 @@ public class BeaconDataSource {
         //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
        // }
 
-        String where = ServiceTable.COLUMN_BEACON + "=?";
-        String whereArgs[] = new String[] {uuid};
+        String where = ServiceTable.COLUMN_ID + "=?";
+        String whereArgs[] = new String[] {id};
 
         try {
             database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
@@ -92,7 +98,24 @@ public class BeaconDataSource {
         database.close();
     }
 
-    public void setNoResponse(String uuid) {
+//    public void setId(int major, int minor, String id) {
+//        open();
+//
+//        ContentValues values = new ContentValues();
+//        values.put(ServiceTable.COLUMN_ID, id);
+//
+//        String where = ServiceTable.COLUMN_MAJOR + "=?" + " AND " + ServiceTable.COLUMN_MINOR + "=?";
+//        String whereArgs[] = new String[] {String.valueOf(major), String.valueOf(minor)};
+//
+//        try {
+//            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+//        } catch (SQLException ex) {
+//            ex.printStackTrace();
+//        }
+//        database.close();
+//    }
+
+    public void setNoResponse(String id) {
         open();
 
         ContentValues values = new ContentValues();
@@ -103,8 +126,8 @@ public class BeaconDataSource {
         //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
         // }
 
-        String where = ServiceTable.COLUMN_BEACON + "=?";
-        String whereArgs[] = new String[] {uuid};
+        String where = ServiceTable.COLUMN_ID + "=?";
+        String whereArgs[] = new String[] {id};
 
         try {
             database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
@@ -114,10 +137,10 @@ public class BeaconDataSource {
         database.close();
     }
 
-//    public void deleteBeacon(BeaconDevice beacon) {
-//        String UUID = beacon.getUUID();
-//        database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_BEACON + " = " + UUID, null);
-//    }
+    public void deleteBeacon(BeaconDevice beacon) {
+        String id = beacon.getId();
+        database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_ID + " = " + id, null);
+    }
 
 //    public BeaconDevice getBeaconByUUID(String UUID) {
 //        List<BeaconDevice> beacons = getAllBeacons();
@@ -148,9 +171,18 @@ public class BeaconDataSource {
     }
 
     private BeaconDevice cursorToBeacon(Cursor cursor) {
-       // BeaconDevice beacon = new BeaconDevice();
-       // beacon.setUUID(cursor.getString(0));
-       // beacon.setResponse(cursor.getInt(1));
-        return null;
+        BeaconDevice beacon = new BeaconDevice();
+        beacon.setMajor(cursor.getInt(0));
+        beacon.setMinor(cursor.getInt(1));
+        String date = cursor.getString(2);
+        try {
+            beacon.setDate(new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy").parse(date));
+        } catch (ParseException ex) {
+            ex.printStackTrace();
+        }
+        beacon.setId(cursor.getString(3));
+        beacon.setParent(cursor.getString(4));
+        beacon.setResponse(cursor.getInt(5));
+        return beacon;
     }
 }

@@ -3,32 +3,43 @@ package keystone_technologies.com.readingthecity;
 import java.io.Serializable;
 import java.util.Date;
 
-public class BeaconDevice implements Serializable {
+public class BeaconDevice {
 
     private int response;
-    private String major;
-    private String minor;
+    private int major;
+    private int minor;
     private String name;
     private String parent;
+    private String id;
     private Date date;
     private String url;
     private String description;
+    private boolean hasParent;
 
-    public BeaconDevice(String major, String minor, Date date) {
-        this.major = major;
-        this.minor = minor;
-        this.date = date;
+    public BeaconDevice() {
     }
 
-    public BeaconDevice(String major, String minor, String name, String parent, Date date, String url, String description, int response) {
+    public BeaconDevice(String id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    public BeaconDevice(int major, int minor, String name, String parent, String id,
+                        String url, String description) {
         this.major = major;
         this.minor = minor;
         this.name = name;
         this.parent = parent;
-        this.date = date;
         this.url = url;
         this.description = description;
-        this.response = response;
+        this.id = id;
+    }
+
+    public boolean hasParent() {
+        if (getParent().equals(null)) {
+            return false;
+        }
+        return true;
     }
 
     public int getResponse() {
@@ -39,19 +50,19 @@ public class BeaconDevice implements Serializable {
         this.response = response;
     }
 
-    public void setMajor(String major) {
+    public void setMajor(int major) {
         this.major = major;
     }
 
-    public String getMajor() {
+    public int getMajor() {
         return major;
     }
 
-    public void setMinor(String minor) {
+    public void setMinor(int minor) {
         this.minor = minor;
     }
 
-    public String getMinor() {
+    public int getMinor() {
         return minor;
     }
 
@@ -89,6 +100,14 @@ public class BeaconDevice implements Serializable {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getDescription() {

@@ -26,6 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -96,54 +97,40 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
             }
 
         } catch(UnsupportedEncodingException ex) {
-
+            ex.printStackTrace();
         } catch (IOException ex) {
-
+            ex.printStackTrace();
         } catch (JSONException ex) {
-
+            ex.printStackTrace();
         }
 
         return output;
     }
 
     protected void onPostExecute(String result) {
-       // Date date = new Date();
         try {
             JSONObject jsonObject = new JSONObject(result);
             JSONArray jsonArray = jsonObject.getJSONArray("rows");
-
             JSONObject row = jsonArray.getJSONObject(0);
+            String fileName = String.valueOf(beacon.getMajor()) + String.valueOf(beacon.getMinor());
+
+            FileOutputStream fos = context.openFileOutput(fileName, Context.MODE_PRIVATE);
+            fos.write(result.getBytes());
+            fos.close();
+
             JSONObject value = row.getJSONObject("value");
+
+//            BeaconDataSource dataSource = new BeaconDataSource(context);
+//            dataSource.setId(value.getInt("major"), value.getInt("minor"), id.toString());
 
             if (!value.isNull("parent")) {
                 new GetBeaconDetails(value.get("parent").toString(),
-                        value.get("major").toString(), value.get("minor").toString(), context).execute();
-            }
-
-//            BeaconDevice beacon = new BeaconDevice(value.get("major").toString(),
-//                    value.get("minor").toString(), value.get("name").toString(),
-//                    value.get("parent").toString(), date,
-//                    value.get("url").toString(), value.get("description").toString(), Constants.NO);
-//
-//            BeaconTrackingService.addToBeaconList(beacon);
-//            BeaconTrackingService.serializeBeaconList();
-
-
-//            FileOutputStream fos = context.openFileOutput("beaconStorage", Context.MODE_APPEND);
-//            fos.write(result.getBytes());
-//            fos.close();
+                        value.getInt("major"), value.getInt("minor"), context).execute();
+            } //else {
+             //   BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id")), context);
+           // }
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-//        try {
-//            // Getting adapter by passing json data ArrayList
-//            adapter = new ContactUsActivity.OfficeAdapter(activity.getBaseContext(), R.layout.cell_office, result);
-//            activity.setListAdapter(adapter);
-//            adapter.notifyDataSetChanged();
-//            dialog.dismiss();
-//        } catch (NullPointerException e) {
-//            e.printStackTrace();
-//        }
     }
 }

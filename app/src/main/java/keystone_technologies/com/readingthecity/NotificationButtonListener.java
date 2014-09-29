@@ -12,15 +12,15 @@ public class NotificationButtonListener extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         BeaconDataSource dataSource = new BeaconDataSource(context);
-        String uuid = intent.getExtras().getString("uuid");
+        String id = intent.getExtras().getString("id");
 
         if (action.equals("Yes")) {
             Toast.makeText(context, "YES BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
-            dataSource.setYesResponse(uuid);
+            dataSource.setYesResponse(id);
             cancelNotification(context, Constants.NOTIFICATION_ID);
         } else {
             Toast.makeText(context, "NO BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
-            dataSource.setNoResponse(uuid);
+            dataSource.setNoResponse(id);
             cancelNotification(context, Constants.NOTIFICATION_ID);
         }
     }

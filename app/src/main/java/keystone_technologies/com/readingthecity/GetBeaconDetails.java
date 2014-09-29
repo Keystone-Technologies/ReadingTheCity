@@ -42,8 +42,8 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
 
     private String parentId;
     private StringBuilder sb = null;
-    private String major;
-    private String minor;
+    private int major;
+    private int minor;
     private Context context;
 
     public GetBeaconDetails(String parentId) {
@@ -51,7 +51,7 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
         this.parentId = parentId;
     }
 
-    public GetBeaconDetails(String parentId, String major, String minor, Context context) {
+    public GetBeaconDetails(String parentId, int major, int minor, Context context) {
         super();
         this.parentId = parentId;
         this.major = major;
@@ -99,32 +99,42 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
         } catch (JSONException ex) {
 
         }
-
-
         return output;
-
     }
 
     protected void onPostExecute(String result) {
-        Date date = new Date();
         try {
             JSONObject jsonObject = new JSONObject(result);
             JSONArray jsonArray = jsonObject.getJSONArray("rows");
 
-            JSONObject row = jsonArray.getJSONObject(0);
-            JSONObject value = row.getJSONObject("value");
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject row = jsonArray.getJSONObject(i);
+                String fileName = row.getString("id");
+                FileOutputStream fos = context.openFileOutput(fileName, Context.MODE_PRIVATE);
+                fos.write(result.getBytes());
+                fos.close();
+                JSONObject value = row.getJSONObject("value");
+                BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id"),
+                        value.getString("name")), context);
 
-            if (!value.isNull("parent")) {
-                new GetBeaconDetails(value.get("parent").toString()).execute();
             }
 
-            BeaconDevice beacon = new BeaconDevice(major, minor, value.get("name").toString(),
-                        value.get("parent").toString(), date,
-                        value.get("url").toString(), value.get("description").toString(), Constants.NO);
 
-            BeaconTrackingService.addToBeaconList(beacon);
-            BeaconTrackingService.serializeBeaconList();
 
+
+
+
+
+
+
+//            BeaconDataSource dataSource = new BeaconDataSource(context);
+//            dataSource.setId(value.getInt("major"), value.getInt("minor"), id.toString());
+
+//            if (!value.isNull("parent")) {
+//                new GetBeaconDetails(value.get("parent").toString()).execute();
+//            }// else {
+
+           // }
         } catch (Exception e) {
             e.printStackTrace();
         }
