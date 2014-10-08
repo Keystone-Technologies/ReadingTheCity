@@ -110,7 +110,7 @@ public class BeaconTrackingService extends Service {
                 .build();
 
         notificationBeacon.contentView = notificationView;
-        notificationManager.notify(notificationId, notificationBeacon);
+        notificationManager.notify(225, notificationBeacon);
 
     }
 
@@ -155,54 +155,22 @@ public class BeaconTrackingService extends Service {
                         public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
 
                             if (!beacons.isEmpty()) {
-                                for (Beacon b : beacons) {
-                                    beaconList = dataSource.getAllBeacons();
-
-                                    if (beaconList.isEmpty()) {
-                                        dataSource.createBeacon(b.getMajor(), b.getMinor(), new Date().toString(),
+                                beaconList = dataSource.getAllBeacons();
+                                if (beaconList.isEmpty()) {
+                                    dataSource.createBeacon(beacons.get(0).getMajor(),
+                                            beacons.get(0).getMinor(), new Date().toString(),
                                                 Constants.NO);
-                                        new GetBeaconInfo(b, getApplicationContext()).execute();
+                                        new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
+                                } else {
+                                    if (compareBeaconToList(beacons.get(0))) {
+                                        dataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
+                                                new Date().toString(), Constants.NO);
+                                            new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                     } else {
-                                        if (compareBeaconToList(b)) {
-                                            dataSource.createBeacon(b.getMajor(), b.getMinor(), new Date().toString(),
-                                                    Constants.NO);
-                                            new GetBeaconInfo(b, getApplicationContext()).execute();
-                                        } else {
-                                          //  BeaconDevice bd = getStoredBeacon(b);
-//                                            ArrayList<BeaconDevice> deviceList = new ArrayList<BeaconDevice>();
-//                                            deviceList.add(bd);
-//                                            while (getStoredBeacon(getBeaconFromList(b).getId()).hasParent()) {
-//
-//                                            }
-
-
-
-                                           // ArrayList<File> fileList = getBeaconDetsilsList(beaconDevice.getId());
-
-                                            // use current data by getting serialized file stored.
-                                        }
+                                        // beacon less than 24 hours old so use it from db
                                     }
-
-
-                                   // beaconList = getBeaconListDeserialized();
-//                                    BeaconDevice bd = new BeaconDevice(String.valueOf(b.getMajor()),
-//                                            String.valueOf(b.getMinor()), date);
-//                                    if (beaconList.isEmpty()) {
-//                                        beaconList.add(bd);
-//                                        serializeBeaconList();
-//                                        new GetBeaconInfo(b, getApplicationContext()).execute();
-//                                    } else {
-//                                        if (compareBeaconToList(bd)) {
-//                                            beaconList.add(bd);
-//                                            serializeBeaconList();
-//                                            new GetBeaconInfo(b, getApplicationContext()).execute();
-//                                        }
-//                                    }
                                 }
                             }
-
-                                //beaconNotify(beacons.get(0));
-
                         }
                     });
             }
@@ -213,19 +181,19 @@ public class BeaconTrackingService extends Service {
 
     private BeaconDevice getStoredBeacon(Beacon beacon) {
         BeaconDevice beaconStored = new BeaconDevice();
-        try {
-            FileInputStream fileIn = openFileInput(String.valueOf(beacon.getMajor() + beacon.getMinor()));
-            BufferedInputStream buffer = new BufferedInputStream(fileIn);
-            ObjectInputStream in = new ObjectInputStream(buffer);
+        //try {
+//            FileInputStream fileIn = openFileInput(String.valueOf(beacon.getMajor() + beacon.getMinor()));
+//            BufferedInputStream buffer = new BufferedInputStream(fileIn);
+//            ObjectInputStream in = new ObjectInputStream(buffer);
+//
+//            String jsonContents = in.readObject().toString();
+//            beaconStored = parseJSON(jsonContents);
 
-            String jsonContents = in.readObject().toString();
-            beaconStored = parseJSON(jsonContents);
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        } catch (ClassNotFoundException ex) {
-            ex.printStackTrace();
-        }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        } catch (ClassNotFoundException ex) {
+//            ex.printStackTrace();
+//        }
         return beaconStored;
     }
 

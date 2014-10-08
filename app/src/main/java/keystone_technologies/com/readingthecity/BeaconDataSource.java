@@ -21,7 +21,8 @@ public class BeaconDataSource {
     private SQLiteDatabase database;
     private ServiceTable dbServiceTable;
     private String[] allColumns = { ServiceTable.COLUMN_MAJOR, ServiceTable.COLUMN_MINOR,
-            ServiceTable.COLUMN_DATE, ServiceTable.COLUMN_NAME, ServiceTable.COLUMN_ID, ServiceTable.COLUMN_PARENT, ServiceTable.COLUMN_RESPOMSE };
+            ServiceTable.COLUMN_DATE, ServiceTable.COLUMN_NAME,
+            ServiceTable.COLUMN_ID, ServiceTable.COLUMN_PARENT, ServiceTable.COLUMN_RESPOMSE };
 
     public BeaconDataSource(Context context) {
         dbServiceTable = new ServiceTable(context);
@@ -52,6 +53,20 @@ public class BeaconDataSource {
 //        BeaconDevice newBeacon = cursorToBeacon(cursor);
 //        cursor.close();
 //        return newBeacon;
+    }
+
+    public void createBeacon(int major, int minor, String date, String name, String id, int response) {
+        open();
+        ContentValues values = new ContentValues();
+        values.put(ServiceTable.COLUMN_MAJOR, major);
+        values.put(ServiceTable.COLUMN_MINOR, minor);
+        values.put(ServiceTable.COLUMN_DATE, date);
+        values.put(ServiceTable.COLUMN_NAME, name);
+        values.put(ServiceTable.COLUMN_ID, id);
+        values.put(ServiceTable.COLUMN_RESPOMSE, response);
+
+        database.insert(ServiceTable.TABLE_SERVICE, null, values);
+        close();
     }
 
     public int getBeaconResponse(String id) {

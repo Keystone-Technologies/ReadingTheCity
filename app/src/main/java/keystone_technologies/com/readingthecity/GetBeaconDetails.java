@@ -9,7 +9,9 @@ import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -33,10 +35,12 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
+import java.net.URLEncoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements Serializable {
 
@@ -64,19 +68,12 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
 
         String output = "";
 
-        JSONObject jsonObject = new JSONObject();
-
         try {
-            jsonObject.put("key", parentId);
 
-            HttpClient httpclient = new DefaultHttpClient();
-            HttpPost httppost = new HttpPost(Constants.BEACON_DETAILS);
-            StringEntity se = new StringEntity(jsonObject.toString());
-            se.setContentType("application/json;charset=UTF-8");
-            se.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json;charset=UTF-8"));
-            httppost.setEntity(se);
-
-            HttpResponse response = httpclient.execute(httppost);
+            HttpClient httpClient = new DefaultHttpClient();
+            String url = Constants.BEACON_DETAILS + URLEncoder.encode('"' + parentId + '"', "UTF-8");
+            HttpGet httpGet = new HttpGet(url);
+            HttpResponse response = httpClient.execute(httpGet);
 
             if (response != null) {
                 InputStream is = response.getEntity().getContent();
@@ -91,13 +88,8 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
                 output = sb.toString();
             }
 
-
-        } catch (UnsupportedEncodingException ex) {
-
-        } catch (IOException ex) {
-
-        } catch (JSONException ex) {
-
+        } catch(Exception e) {
+            e.printStackTrace();
         }
         return output;
     }
@@ -109,24 +101,26 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject row = jsonArray.getJSONObject(i);
-                String fileName = row.getString("id");
-                FileOutputStream fos = context.openFileOutput(fileName, Context.MODE_PRIVATE);
-                fos.write(result.getBytes());
-                fos.close();
-                JSONObject value = row.getJSONObject("value");
                 BeaconDataSource dataSource = new BeaconDataSource(context);
-                dataSource.setId(major, minor, value.getString("_id"));
-                dataSource.setName(value.getString("_id"), value.getString("name"));
-                BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id"),
-                        value.getString("name")), context, i+1);
+
+                JSONObject value = row.getJSONObject("value");
+
+                dataSource.createBeacon(major, minor, new Date().toString(),
+                        value.getString("name"), value.getString("_id"),
+                        Constants.NO);
+
+                if (!value.has("parent")) {
+                    BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id"),
+                            value.getString("name")), context, i);
+                }
+
+
+
+
+
+
 
             }
-
-
-
-
-
-
 
 
 

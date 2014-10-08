@@ -15,6 +15,7 @@ import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -32,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -75,13 +77,13 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
             jsonObject.put("key", jsonArray);
 
             HttpClient httpclient = new DefaultHttpClient();
-            HttpPost httppost = new HttpPost(Constants.BEACON_QUERY);
-            StringEntity se = new StringEntity(jsonObject.toString());
-            se.setContentType("application/json;charset=UTF-8");
-            se.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json;charset=UTF-8"));
-            httppost.setEntity(se);
+            HttpGet httpget = new HttpGet(Constants.BEACON_QUERY + "[" + beacon.getMajor() + "," + beacon.getMinor() + "]");
+            //StringEntity se = new StringEntity(jsonObject.toString());
+            //se.setContentType("application/json;charset=UTF-8");
+            //se.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json;charset=UTF-8"));
+            //httppost.setEntity(se);
 
-            HttpResponse response = httpclient.execute(httppost);
+            HttpResponse response = httpclient.execute(httpget);
 
               if (response != null) {
                 InputStream is = response.getEntity().getContent();
@@ -112,18 +114,12 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
             JSONObject jsonObject = new JSONObject(result);
             JSONArray jsonArray = jsonObject.getJSONArray("rows");
             JSONObject row = jsonArray.getJSONObject(0);
-            String fileName = String.valueOf(beacon.getMajor()) + String.valueOf(beacon.getMinor());
-
-            FileOutputStream fos = context.openFileOutput(fileName, Context.MODE_PRIVATE);
-            fos.write(result.getBytes());
-            fos.close();
-
             JSONObject value = row.getJSONObject("value");
 
 //            BeaconDataSource dataSource = new BeaconDataSource(context);
 //            dataSource.setId(value.getInt("major"), value.getInt("minor"), id.toString());
 
-            if (!value.isNull("parent")) {
+            if (value.has("parent")) {
                 new GetBeaconDetails(value.get("parent").toString(),
                         value.getInt("major"), value.getInt("minor"), context).execute();
             } //else {

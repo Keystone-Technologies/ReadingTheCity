@@ -19,6 +19,7 @@ public class NotificationButtonListener extends BroadcastReceiver {
             Toast.makeText(context, "YES BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
             dataSource.setYesResponse(id);
             cancelNotification(context, notificationId);
+           // dataSource.getBeaconFromId()
         } else {
             Toast.makeText(context, "NO BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
             dataSource.setNoResponse(id);
