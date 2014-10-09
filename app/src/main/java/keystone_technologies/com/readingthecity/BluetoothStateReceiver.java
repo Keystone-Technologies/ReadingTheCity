@@ -25,7 +25,7 @@ public class BluetoothStateReceiver extends BroadcastReceiver {
 
                     mNotificationManager = (NotificationManager)
                             context.getSystemService(Context.NOTIFICATION_SERVICE);
-                    mNotificationManager.notify(1, new Notification.Builder(context)
+                    mNotificationManager.notify(Constants.SERVICE_NOTIFICATION_ID, new Notification.Builder(context)
                             .setSmallIcon(R.drawable.bg_distance)
                             .setContentText("Bluetooth Off")
                             .setContentTitle(context.getString(R.string.app_name))
@@ -42,7 +42,7 @@ public class BluetoothStateReceiver extends BroadcastReceiver {
 
                     mNotificationManager = (NotificationManager)
                             context.getSystemService(Context.NOTIFICATION_SERVICE);
-                    mNotificationManager.notify(1, new Notification.Builder(context)
+                    mNotificationManager.notify(Constants.SERVICE_NOTIFICATION_ID, new Notification.Builder(context)
                             .setSmallIcon(R.drawable.beacon_gray)
                             .setContentText("Searching for Beacons")
                             .setContentTitle(context.getString(R.string.app_name))

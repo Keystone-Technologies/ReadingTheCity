@@ -45,7 +45,6 @@ public class BeaconTrackingService extends Service {
     private static BeaconManager beaconManager;
     private List<BeaconDevice> beaconList;
     private BeaconDataSource dataSource;
-    private static Context context;
 
 
     @Override
@@ -57,13 +56,12 @@ public class BeaconTrackingService extends Service {
     public void onCreate() {
         Toast.makeText(this, "Service created!", Toast.LENGTH_LONG).show();
 
-        context = this;
         beaconList = new ArrayList<BeaconDevice>();
         dataSource = new BeaconDataSource(this);
 
         beaconManager = new BeaconManager(this);
 
-        startForeground(1, new Notification.Builder(this)
+        startForeground(Constants.SERVICE_NOTIFICATION_ID, new Notification.Builder(this)
                 .setSmallIcon(R.drawable.beacon_gray)
                 .setContentText("Searching For Beacons")
                 .setContentTitle(getString(R.string.app_name))
