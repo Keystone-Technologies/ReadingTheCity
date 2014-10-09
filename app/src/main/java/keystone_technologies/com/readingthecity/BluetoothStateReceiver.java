@@ -1,5 +1,6 @@
 package keystone_technologies.com.readingthecity;
 
+import android.app.Notification;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -19,6 +20,11 @@ public class BluetoothStateReceiver extends BroadcastReceiver {
                 case BluetoothAdapter.STATE_OFF:
                     stopEstimoteService(context);
                     BeaconTrackingService.stopTrackingListener();
+                    new Notification.Builder(context)
+                            .setSmallIcon(R.drawable.bg_distance)
+                            .setContentText("Bluetooth Off")
+                            .setContentTitle(context.getString(R.string.app_name))
+                            .build();
                    // BeaconTrackingService service = new BeaconTrackingService();
                     //service.getService().stopSelf();
                     stopTrackingService(context);

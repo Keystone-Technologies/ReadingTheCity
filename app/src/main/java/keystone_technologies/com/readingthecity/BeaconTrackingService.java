@@ -123,17 +123,17 @@ public class BeaconTrackingService extends Service {
         }
     }
 
-    @Override
-    public void onDestroy() {
-        Toast.makeText(this, "Service stopped", Toast.LENGTH_LONG).show();
-        try {
-            beaconManager.disconnect();
-            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
-        } catch (RemoteException e) {
-
-        }
-        super.onDestroy();
-    }
+//    @Override
+//    public void onDestroy() {
+//        Toast.makeText(this, "Service stopped", Toast.LENGTH_LONG).show();
+//        try {
+//            beaconManager.disconnect();
+//            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
+//        } catch (RemoteException e) {
+//
+//        }
+//        super.onDestroy();
+//    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -243,17 +243,6 @@ public class BeaconTrackingService extends Service {
 //            return beaconListTemp;
 //    }
 
-//    public static void serializeBeaconList() {
-//        try {
-//            FileOutputStream fileOut = context.openFileOutput("beaconStorage", MODE_PRIVATE);
-//            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-//            out.writeObject(beaconList);
-//            out.close();
-//            fileOut.close();
-//        } catch (IOException ex) {
-//            ex.printStackTrace();
-//        }
-//    }
 
     private BeaconDevice getBeaconFromList(Beacon beacon) {
         for (BeaconDevice bd : beaconList) {
