@@ -1,6 +1,7 @@
 package keystone_technologies.com.readingthecity;
 
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,6 +10,7 @@ import android.content.Intent;
 public class BluetoothStateReceiver extends BroadcastReceiver {
 
     private static Intent pushIntent;
+    private NotificationManager mNotificationManager;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -20,18 +22,33 @@ public class BluetoothStateReceiver extends BroadcastReceiver {
                 case BluetoothAdapter.STATE_OFF:
                     stopEstimoteService(context);
                     BeaconTrackingService.stopTrackingListener();
-                    new Notification.Builder(context)
+
+                    mNotificationManager = (NotificationManager)
+                            context.getSystemService(Context.NOTIFICATION_SERVICE);
+                    mNotificationManager.notify(1, new Notification.Builder(context)
                             .setSmallIcon(R.drawable.bg_distance)
                             .setContentText("Bluetooth Off")
                             .setContentTitle(context.getString(R.string.app_name))
-                            .build();
+                            .build());
+
+
                    // BeaconTrackingService service = new BeaconTrackingService();
                     //service.getService().stopSelf();
-                    stopTrackingService(context);
+                   // stopTrackingService(context);
                     break;
                 case BluetoothAdapter.STATE_ON:
                     startEstimoteService(context);
-                    startTrackingService(context);
+                    BeaconTrackingService.startTrackingListener();
+
+                    mNotificationManager = (NotificationManager)
+                            context.getSystemService(Context.NOTIFICATION_SERVICE);
+                    mNotificationManager.notify(1, new Notification.Builder(context)
+                            .setSmallIcon(R.drawable.beacon_gray)
+                            .setContentText("Searching for Beacons")
+                            .setContentTitle(context.getString(R.string.app_name))
+                            .build());
+
+                    //startTrackingService(context);
                     break;
             }
         }

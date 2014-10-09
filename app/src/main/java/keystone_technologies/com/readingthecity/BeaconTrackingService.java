@@ -45,7 +45,8 @@ public class BeaconTrackingService extends Service {
     private static BeaconManager beaconManager;
     private List<BeaconDevice> beaconList;
     private BeaconDataSource dataSource;
-    //private static Context context;
+    private static Context context;
+
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -56,30 +57,18 @@ public class BeaconTrackingService extends Service {
     public void onCreate() {
         Toast.makeText(this, "Service created!", Toast.LENGTH_LONG).show();
 
-        //context = this;
+        context = this;
         beaconList = new ArrayList<BeaconDevice>();
         dataSource = new BeaconDataSource(this);
 
         beaconManager = new BeaconManager(this);
 
-        Notification notification = new Notification.Builder(this)
-        .setSmallIcon(R.drawable.beacon_gray)
-        .setContentText("Searching For Beacons")
-        .setContentTitle(getString(R.string.app_name))
-        .build();
-
-        startForeground(1, notification);
+        startForeground(1, new Notification.Builder(this)
+                .setSmallIcon(R.drawable.beacon_gray)
+                .setContentText("Searching For Beacons")
+                .setContentTitle(getString(R.string.app_name))
+                .build());
     }
-
-//    public void beaconNotify(BeaconDevice b) {
-//        Log.d("Beacon found. Name:", b.getName());
-//
-//
-//
-//        Toast.makeText(getApplicationContext(), "Beacon found with Name: " +
-//                b.getName(), Toast.LENGTH_SHORT).show();
-//        postNotification(b, this.getApplicationContext());
-//    }
 
     public static void postNotification(BeaconDevice beacon, Context c, int notificationId) {
 
@@ -116,8 +105,16 @@ public class BeaconTrackingService extends Service {
 
     public static void stopTrackingListener() {
         try {
-            beaconManager.disconnect();
+           // beaconManager.disconnect();
             beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
+        } catch (RemoteException e) {
+
+        }
+    }
+
+    public static void startTrackingListener() {
+        try {
+            beaconManager.startRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
         } catch (RemoteException e) {
 
         }
@@ -215,33 +212,6 @@ public class BeaconTrackingService extends Service {
         }
         return beaconDevice;
     }
-
-//    private ArrayList<BeaconDevice> getBeaconListDeserialized() {
-//            ArrayList<BeaconDevice> beaconListTemp = new ArrayList<BeaconDevice>();
-//            try {
-//               // File file = new File(context.getFilesDir().getAbsolutePath() + Constants.FILEPATH);
-//                //if (file.exists()) {
-//                    FileInputStream fileIn = context.openFileInput("beaconStorage");
-//                    BufferedInputStream buffer = new BufferedInputStream(fileIn);
-//                    ObjectInputStream in = new ObjectInputStream(buffer);
-//
-//                    beaconListTemp = (ArrayList<BeaconDevice>)in.readObject();
-//
-//                    for (BeaconDevice b : beaconListTemp) {
-//                        System.out.println("Deserialized data: \n" + b.getName());
-//                    }
-//
-//                    in.close();
-//                    fileIn.close();
-//               // }
-//
-//            } catch (IOException ex) {
-//                ex.printStackTrace();
-//            } catch (ClassNotFoundException ex) {
-//                ex.printStackTrace();
-//            }
-//            return beaconListTemp;
-//    }
 
 
     private BeaconDevice getBeaconFromList(Beacon beacon) {
