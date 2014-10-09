@@ -153,13 +153,12 @@ public class BeaconTrackingService extends Service {
                                 beaconList = dataSource.getAllBeacons();
                                 if (beaconList.isEmpty()) {
                                     dataSource.createBeacon(beacons.get(0).getMajor(),
-                                            beacons.get(0).getMinor(), new Date().toString(),
-                                                Constants.NO);
+                                            beacons.get(0).getMinor(), new Date().toString());
                                         new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                 } else {
                                     if (compareBeaconToList(beacons.get(0))) {
                                         dataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
-                                                new Date().toString(), Constants.NO);
+                                                new Date().toString());
                                             new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                     } else {
                                         // beacon less than 24 hours old so use it from db

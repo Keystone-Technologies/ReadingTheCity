@@ -95,25 +95,29 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
     }
 
     protected void onPostExecute(String result) {
+        BeaconDataSource dataSource = new BeaconDataSource(context);
+        dataSource.storeResultStringInDB(result);
         try {
             JSONObject jsonObject = new JSONObject(result);
             JSONArray jsonArray = jsonObject.getJSONArray("rows");
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject row = jsonArray.getJSONObject(i);
-                BeaconDataSource dataSource = new BeaconDataSource(context);
+
 
                 JSONObject value = row.getJSONObject("value");
 
-                dataSource.createBeacon(major, minor, new Date().toString(),
+
+
+                dataSource.createBeacon(value.getInt("major"), value.getInt("minor"), new Date().toString(),
                         value.getString("name"), value.getString("_id"),
                         Constants.NO);
 
                 if (value.has("parent")) {
                     new GetBeaconDetails(value.get("parent").toString()).execute();
                 } else {
-                   // BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id"),
-                     //              value.getString("name")), context, i);
+                    BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id"),
+                                   value.getString("name")), context, i);
                 }
             }
         } catch (Exception e) {
