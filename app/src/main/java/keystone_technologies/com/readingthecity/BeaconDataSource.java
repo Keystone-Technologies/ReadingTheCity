@@ -57,11 +57,23 @@ public class BeaconDataSource {
     public void createBeacon(String date, String name, String id) {
         open();
         ContentValues values = new ContentValues();
+        values.put(ServiceTable.COLUMN_DATE, date);
+        values.put(ServiceTable.COLUMN_NAME, name);
+        values.put(ServiceTable.COLUMN_ID, id);
+
+        database.insert(ServiceTable.TABLE_SERVICE, null, values);
+        close();
+    }
+
+    public void createBeacon(String date, String name, String id, String parent) {
+        open();
+        ContentValues values = new ContentValues();
 //        values.put(ServiceTable.COLUMN_MAJOR, major);
 //        values.put(ServiceTable.COLUMN_MINOR, minor);
         values.put(ServiceTable.COLUMN_DATE, date);
         values.put(ServiceTable.COLUMN_NAME, name);
         values.put(ServiceTable.COLUMN_ID, id);
+        values.put(ServiceTable.COLUMN_PARENT, parent);
 //        values.put(ServiceTable.COLUMN_RESPOMSE, response);
 
         database.insert(ServiceTable.TABLE_SERVICE, null, values);
@@ -227,8 +239,8 @@ public class BeaconDataSource {
 
         for (int i = 0; i < beaconList.size(); i++) {
             for (int j = 0; j < relatedBeaconList.size(); j++) {
-                if (beaconList.get(i).getId() != null) {
-                    if (relatedBeaconList.get(j).getId().equals(beaconList.get(i).getId())) {
+                if (beaconList.get(i).getId() != null && beaconList.get(i).hasParent()) {
+                    if (relatedBeaconList.get(j).getId().equals(beaconList.get(i).getParent())) {
                         relatedBeaconList.add(beaconList.get(i));
                     }
                 }
