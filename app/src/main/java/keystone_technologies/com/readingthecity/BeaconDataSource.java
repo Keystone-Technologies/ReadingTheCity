@@ -21,7 +21,8 @@ public class BeaconDataSource {
     private SQLiteDatabase database;
     private ServiceTable dbServiceTable;
     private String[] allColumns = { ServiceTable.COLUMN_MAJOR, ServiceTable.COLUMN_MINOR,
-            ServiceTable.COLUMN_DATE, ServiceTable.COLUMN_STRING };
+            ServiceTable.COLUMN_DATE, ServiceTable.COLUMN_NAME,
+            ServiceTable.COLUMN_ID, ServiceTable.COLUMN_PARENT, ServiceTable.COLUMN_RESPOMSE };
 
     public BeaconDataSource(Context context) {
         dbServiceTable = new ServiceTable(context);
@@ -44,29 +45,28 @@ public class BeaconDataSource {
 
         database.insert(ServiceTable.TABLE_SERVICE, null, values);
         close();
+
+//        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, allColumns, ServiceTable.COLUMN_BEACON +
+//                " = " + UUID, null, null, null, null);
+//        cursor.moveToFirst();
+//        BeaconDevice newBeacon = cursorToBeacon(cursor);
+//        cursor.close();
+//        return newBeacon;
     }
 
-    public void storeResultStringInDB(String s) {
+    public void createBeacon(String date, String name, String id) {
         open();
         ContentValues values = new ContentValues();
-        values.put(ServiceTable.COLUMN_STRING, s);
+//        values.put(ServiceTable.COLUMN_MAJOR, major);
+//        values.put(ServiceTable.COLUMN_MINOR, minor);
+        values.put(ServiceTable.COLUMN_DATE, date);
+        values.put(ServiceTable.COLUMN_NAME, name);
+        values.put(ServiceTable.COLUMN_ID, id);
+//        values.put(ServiceTable.COLUMN_RESPOMSE, response);
+
         database.insert(ServiceTable.TABLE_SERVICE, null, values);
         close();
     }
-
-//    public void createBeacon(int major, int minor, String date, String name, String id, int response) {
-//        open();
-//        ContentValues values = new ContentValues();
-//        values.put(ServiceTable.COLUMN_MAJOR, major);
-//        values.put(ServiceTable.COLUMN_MINOR, minor);
-//        values.put(ServiceTable.COLUMN_DATE, date);
-//        values.put(ServiceTable.COLUMN_NAME, name);
-//        values.put(ServiceTable.COLUMN_ID, id);
-//        values.put(ServiceTable.COLUMN_RESPOMSE, response);
-//
-//        database.insert(ServiceTable.TABLE_SERVICE, null, values);
-//        close();
-//    }
 
     public int getBeaconResponse(String id) {
         open();
@@ -212,9 +212,44 @@ public class BeaconDataSource {
         } catch (ParseException ex) {
             ex.printStackTrace();
         }
-        beacon.setId(cursor.getString(3));
-        beacon.setParent(cursor.getString(4));
-        beacon.setResponse(cursor.getInt(5));
+        beacon.setName(cursor.getString(3));
+        beacon.setId(cursor.getString(4));
+        beacon.setParent(cursor.getString(5));
+        beacon.setResponse(cursor.getInt(6));
         return beacon;
+    }
+
+    public List<BeaconDevice> getRelatedBeaconList(BeaconDevice b) {
+        List<BeaconDevice> relatedBeaconList = new ArrayList<BeaconDevice>();
+        List<BeaconDevice> beaconList = getAllBeacons();
+
+        relatedBeaconList.add(b);
+
+        for (int i = 0; i < beaconList.size(); i++) {
+            for (int j = 0; j < relatedBeaconList.size(); j++) {
+                if (beaconList.get(i).getId() != null) {
+                    if (relatedBeaconList.get(j).getId().equals(beaconList.get(i).getId())) {
+                        relatedBeaconList.add(beaconList.get(i));
+                    }
+                }
+            }
+        }
+
+//        for (int i = 0; i < beaconList.size(); i++) {
+//            if (beaconList.get(i).getId() != null) {
+//                if (beaconList.get(i).getId().equals(id)) {
+//                    relatedBeaconList.add(beaconList.get(i));
+//                    if (beaconList.get(i).hasParent()) {
+//                        for (int j = 0; j < beaconList.size(); j++) {
+//                            if (beaconList.get(i).getParent().equals(relatedBeaconList.get(j).getId())) {
+//                                relatedBeaconList.add(beaconList.get(j));
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//
+//        }
+        return relatedBeaconList;
     }
 }

@@ -19,7 +19,8 @@ public class BeaconDevice {
     public BeaconDevice() {
     }
 
-    public BeaconDevice(String id, String name) {
+    public BeaconDevice(Date date, String name, String id) {
+        this.date = date;
         this.id = id;
         this.name = name;
     }
@@ -36,10 +37,10 @@ public class BeaconDevice {
     }
 
     public boolean hasParent() {
-        if (getParent().equals(null)) {
-            return false;
+        if (getParent() != null) {
+            return true;
         }
-        return true;
+        return false;
     }
 
     public int getResponse() {

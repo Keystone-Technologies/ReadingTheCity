@@ -2,6 +2,7 @@ package keystone_technologies.com.readingthecity;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.estimote.sdk.Beacon;
 
@@ -48,7 +49,7 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
     private StringBuilder sb = null;
     private int major;
     private int minor;
-    private Context context;
+    private static Context context;
 
     public GetBeaconDetails(String parentId) {
         super();
@@ -95,29 +96,32 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
     }
 
     protected void onPostExecute(String result) {
-        BeaconDataSource dataSource = new BeaconDataSource(context);
-        dataSource.storeResultStringInDB(result);
         try {
             JSONObject jsonObject = new JSONObject(result);
             JSONArray jsonArray = jsonObject.getJSONArray("rows");
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject row = jsonArray.getJSONObject(i);
-
+                BeaconDataSource dataSource = new BeaconDataSource(context);
 
                 JSONObject value = row.getJSONObject("value");
 
 
 
-                dataSource.createBeacon(value.getInt("major"), value.getInt("minor"), new Date().toString(),
-                        value.getString("name"), value.getString("_id"),
-                        Constants.NO);
+                dataSource.createBeacon(new Date().toString(), value.getString("name"),
+                        value.getString("_id"));
 
                 if (value.has("parent")) {
                     new GetBeaconDetails(value.get("parent").toString()).execute();
                 } else {
-                    BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id"),
-                                   value.getString("name")), context, i);
+
+
+                    List<BeaconDevice> relatedBeaconList = dataSource.getRelatedBeaconList
+                            (new BeaconDevice(new Date(), value.getString("name"), value.getString("_id")));
+                    Log.d("beacon List", relatedBeaconList.toString());
+
+                    //BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id"),
+                                  // value.getString("name")), context);
                 }
             }
         } catch (Exception e) {
