@@ -114,11 +114,6 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
                 } else {
                     dataSource.createBeacon(new Date().toString(), value.getString("name"),
                             value.getString("_id"));
-
-//                    List<BeaconDevice> relatedBeaconList = dataSource.getRelatedBeaconList
-//                            (new BeaconDevice(new Date(), value.getString("name"), value.getString("_id")));
-//                    Log.d("beacon List", relatedBeaconList.toString());
-
                     BeaconTrackingService.postNotification(new BeaconDevice(value.getString("name"),
                             value.getString("_id")), context);
                 }

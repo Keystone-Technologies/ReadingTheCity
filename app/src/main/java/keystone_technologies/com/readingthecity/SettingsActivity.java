@@ -52,20 +52,22 @@ public class SettingsActivity extends ListActivity {
             Switch s = (Switch) v.findViewById(R.id.beaconName);
 
             if (s != null) {
-                s.setText(items.get(position).getName());
-                s.setChecked(items.get(position).getResponse() != 0);
-                s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                        if(isChecked) {
-                            //do stuff when Switch is ON
-                            dataSource.setYesResponse(compoundButton.getText().toString());
-                        } else {
-                            //do stuff when Switch if OFF
-                            dataSource.setNoResponse(compoundButton.getText().toString());
+                if (items.get(position).getName() != null) {
+                    s.setText(items.get(position).getName());
+                    s.setChecked(items.get(position).getResponse() != 0);
+                    s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                        @Override
+                        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                            if(isChecked) {
+                                //do stuff when Switch is ON
+                                dataSource.setYesResponse(compoundButton.getText().toString());
+                            } else {
+                                //do stuff when Switch if OFF
+                                dataSource.setNoResponse(compoundButton.getText().toString());
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
             return v;
         }

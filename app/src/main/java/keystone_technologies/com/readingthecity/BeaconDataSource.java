@@ -186,16 +186,6 @@ public class BeaconDataSource {
         database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_ID + " = " + id, null);
     }
 
-//    public BeaconDevice getBeaconByUUID(String UUID) {
-//        List<BeaconDevice> beacons = getAllBeacons();
-//        for (BeaconDevice b : beacons) {
-//            if (UUID.equals(b.getUUID())) {
-//                return b;
-//            }
-//        }
-//        return null;
-//    }
-
     public List<BeaconDevice> getAllBeacons() {
         List<BeaconDevice> beacons = new ArrayList<BeaconDevice>();
         open();

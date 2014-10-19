@@ -97,7 +97,7 @@ public class BeaconTrackingService extends Service {
                 .build();
 
         notificationBeacon.contentView = notificationView;
-        notificationManager.notify(225, notificationBeacon);
+        notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
 
     }
 
