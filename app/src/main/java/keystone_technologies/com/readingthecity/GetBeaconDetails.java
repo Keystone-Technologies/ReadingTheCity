@@ -107,10 +107,6 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
                 JSONObject value = row.getJSONObject("value");
 
 
-
-
-
-
                 if (value.has("parent")) {
                     dataSource.createBeacon(new Date().toString(), value.getString("name"),
                             value.getString("_id"), value.getString("parent"));
@@ -119,12 +115,12 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
                     dataSource.createBeacon(new Date().toString(), value.getString("name"),
                             value.getString("_id"));
 
-                    List<BeaconDevice> relatedBeaconList = dataSource.getRelatedBeaconList
-                            (new BeaconDevice(new Date(), value.getString("name"), value.getString("_id")));
-                    Log.d("beacon List", relatedBeaconList.toString());
+//                    List<BeaconDevice> relatedBeaconList = dataSource.getRelatedBeaconList
+//                            (new BeaconDevice(new Date(), value.getString("name"), value.getString("_id")));
+//                    Log.d("beacon List", relatedBeaconList.toString());
 
-                    //BeaconTrackingService.postNotification(new BeaconDevice(value.getString("_id"),
-                                  // value.getString("name")), context);
+                    BeaconTrackingService.postNotification(new BeaconDevice(value.getString("name"),
+                            value.getString("_id")), context);
                 }
             }
         } catch (Exception e) {

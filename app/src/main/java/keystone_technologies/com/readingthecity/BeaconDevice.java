@@ -19,8 +19,7 @@ public class BeaconDevice {
     public BeaconDevice() {
     }
 
-    public BeaconDevice(Date date, String name, String id) {
-        this.date = date;
+    public BeaconDevice(String name, String id) {
         this.id = id;
         this.name = name;
     }

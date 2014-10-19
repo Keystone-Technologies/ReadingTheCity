@@ -231,37 +231,17 @@ public class BeaconDataSource {
         return beacon;
     }
 
-    public List<BeaconDevice> getRelatedBeaconList(BeaconDevice b) {
-        List<BeaconDevice> relatedBeaconList = new ArrayList<BeaconDevice>();
+    public BeaconDevice getChildBeaconFromId(String id) {
         List<BeaconDevice> beaconList = getAllBeacons();
 
-        relatedBeaconList.add(b);
-
-        for (int i = 0; i < beaconList.size(); i++) {
-            for (int j = 0; j < relatedBeaconList.size(); j++) {
-                if (beaconList.get(i).getId() != null && beaconList.get(i).hasParent()) {
-                    if (relatedBeaconList.get(j).getId().equals(beaconList.get(i).getParent())) {
-                        relatedBeaconList.add(beaconList.get(i));
-                    }
+        for (BeaconDevice bd : beaconList) {
+            if (bd.hasParent()) {
+                if (id.equals(bd.getParent())) {
+                    return bd;
                 }
             }
-        }
 
-//        for (int i = 0; i < beaconList.size(); i++) {
-//            if (beaconList.get(i).getId() != null) {
-//                if (beaconList.get(i).getId().equals(id)) {
-//                    relatedBeaconList.add(beaconList.get(i));
-//                    if (beaconList.get(i).hasParent()) {
-//                        for (int j = 0; j < beaconList.size(); j++) {
-//                            if (beaconList.get(i).getParent().equals(relatedBeaconList.get(j).getId())) {
-//                                relatedBeaconList.add(beaconList.get(j));
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//
-//        }
-        return relatedBeaconList;
+        }
+        return null;
     }
 }
