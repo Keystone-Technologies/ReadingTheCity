@@ -15,7 +15,8 @@ public class ServiceTable extends SQLiteOpenHelper {
     public static final String COLUMN_NAME = "name";
     public static final String COLUMN_ID = "_id";
     public static final String COLUMN_PARENT = "parent";
-    public static final String COLUMN_RESPOMSE = "response";
+    public static final String COLUMN_RESPONSE = "response";
+    public static final String COLUMN_NOTIFIED = "notified";
 
     private static final String DATABASE_NAME = "data.db";
     private static final int DATABASE_VERSION = 1;
@@ -23,7 +24,8 @@ public class ServiceTable extends SQLiteOpenHelper {
     private static final String DATABASE_CREATE = "create table " + TABLE_SERVICE + " ( " +
             COLUMN_ID + " TEXT PRIMARY KEY, " + COLUMN_MAJOR + " INTEGER, "
             + COLUMN_MINOR + " INTEGER, " + COLUMN_DATE + " TEXT, " + COLUMN_NAME + " TEXT, "
-            + COLUMN_PARENT + " TEXT, " + COLUMN_RESPOMSE + " INTEGER );";
+            + COLUMN_PARENT + " TEXT, " + COLUMN_RESPONSE + " INTEGER, "
+            + COLUMN_NOTIFIED + " INTEGER );";
 
     public ServiceTable(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
