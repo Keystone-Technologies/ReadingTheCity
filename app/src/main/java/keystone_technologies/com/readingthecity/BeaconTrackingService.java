@@ -173,24 +173,6 @@ public class BeaconTrackingService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private BeaconDevice getStoredBeacon(Beacon beacon) {
-        BeaconDevice beaconStored = new BeaconDevice();
-        //try {
-//            FileInputStream fileIn = openFileInput(String.valueOf(beacon.getMajor() + beacon.getMinor()));
-//            BufferedInputStream buffer = new BufferedInputStream(fileIn);
-//            ObjectInputStream in = new ObjectInputStream(buffer);
-//
-//            String jsonContents = in.readObject().toString();
-//            beaconStored = parseJSON(jsonContents);
-
-//        } catch (IOException ex) {
-//            ex.printStackTrace();
-//        } catch (ClassNotFoundException ex) {
-//            ex.printStackTrace();
-//        }
-        return beaconStored;
-    }
-
     private BeaconDevice parseJSON(String result) {
 
         BeaconDevice beaconDevice = null;

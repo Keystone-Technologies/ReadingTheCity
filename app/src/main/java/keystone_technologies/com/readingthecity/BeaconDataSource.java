@@ -22,7 +22,8 @@ public class BeaconDataSource {
     private ServiceTable dbServiceTable;
     private String[] allColumns = { ServiceTable.COLUMN_MAJOR, ServiceTable.COLUMN_MINOR,
             ServiceTable.COLUMN_DATE, ServiceTable.COLUMN_NAME,
-            ServiceTable.COLUMN_ID, ServiceTable.COLUMN_PARENT, ServiceTable.COLUMN_RESPOMSE };
+            ServiceTable.COLUMN_ID, ServiceTable.COLUMN_PARENT, ServiceTable.COLUMN_RESPONSE,
+            ServiceTable.COLUMN_NOTIFIED};
 
     public BeaconDataSource(Context context) {
         dbServiceTable = new ServiceTable(context);
@@ -45,13 +46,6 @@ public class BeaconDataSource {
 
         database.insert(ServiceTable.TABLE_SERVICE, null, values);
         close();
-
-//        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, allColumns, ServiceTable.COLUMN_BEACON +
-//                " = " + UUID, null, null, null, null);
-//        cursor.moveToFirst();
-//        BeaconDevice newBeacon = cursorToBeacon(cursor);
-//        cursor.close();
-//        return newBeacon;
     }
 
     public void createBeacon(String date, String name, String id) {
@@ -68,13 +62,10 @@ public class BeaconDataSource {
     public void createBeacon(String date, String name, String id, String parent) {
         open();
         ContentValues values = new ContentValues();
-//        values.put(ServiceTable.COLUMN_MAJOR, major);
-//        values.put(ServiceTable.COLUMN_MINOR, minor);
         values.put(ServiceTable.COLUMN_DATE, date);
         values.put(ServiceTable.COLUMN_NAME, name);
         values.put(ServiceTable.COLUMN_ID, id);
         values.put(ServiceTable.COLUMN_PARENT, parent);
-//        values.put(ServiceTable.COLUMN_RESPOMSE, response);
 
         database.insert(ServiceTable.TABLE_SERVICE, null, values);
         close();
@@ -85,7 +76,7 @@ public class BeaconDataSource {
 
         int response = 0;
 
-        String[] result_column = new String[] {ServiceTable.COLUMN_ID, ServiceTable.COLUMN_RESPOMSE};
+        String[] result_column = new String[] {ServiceTable.COLUMN_ID, ServiceTable.COLUMN_RESPONSE};
         String where = ServiceTable.COLUMN_ID + "=" + id;
 
         String whereArgs[] = null;
@@ -94,12 +85,43 @@ public class BeaconDataSource {
         String order = null;
 
         Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, result_column, where, whereArgs, groupBy, having, order);
-        int RESPONSE_INDEX = cursor.getColumnIndexOrThrow(ServiceTable.COLUMN_RESPOMSE);
+        int RESPONSE_INDEX = cursor.getColumnIndexOrThrow(ServiceTable.COLUMN_RESPONSE);
         while (cursor.moveToNext()) {
             response = cursor.getInt(RESPONSE_INDEX);
         }
         cursor.close();
         return response;
+    }
+
+    public void setNotifiedFlag(String id) {
+        open();
+
+        ContentValues values = new ContentValues();
+        values.put(ServiceTable.COLUMN_NOTIFIED, 1);
+
+        String where = ServiceTable.COLUMN_ID + "=?";
+        String whereArgs[] = new String[] {id};
+
+        try {
+            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+        } catch (SQLException e) {
+            Log.e("Error", e.toString());
+        }
+
+        database.close();
+    }
+
+    public boolean hasNotBeenNotified(String id) {
+        List<BeaconDevice> beaconList = getAllBeacons();
+
+        for (BeaconDevice bd : beaconList) {
+            if (id.equals(bd.getId())) {
+                if (bd.getNotified() == 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void setYesResponse(String id) {
@@ -108,7 +130,7 @@ public class BeaconDataSource {
         ContentValues values = new ContentValues();
 
         //if (getBeaconResponse(uuid) == 0) {
-            values.put(ServiceTable.COLUMN_RESPOMSE, 1);
+            values.put(ServiceTable.COLUMN_RESPONSE, 1);
         //} else {
         //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
        // }
@@ -165,7 +187,7 @@ public class BeaconDataSource {
         ContentValues values = new ContentValues();
 
         //if (getBeaconResponse(uuid) == 0) {
-        values.put(ServiceTable.COLUMN_RESPOMSE, 0);
+        values.put(ServiceTable.COLUMN_RESPONSE, 0);
         //} else {
         //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
         // }
@@ -181,8 +203,19 @@ public class BeaconDataSource {
         database.close();
     }
 
-    public void deleteBeacon(BeaconDevice beacon) {
-        String id = beacon.getId();
+    public boolean isBeaconInDB(String id) {
+        List<BeaconDevice> beaconList = getAllBeacons();
+
+        for (BeaconDevice bd : beaconList) {
+            if (id.equals(bd.getId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void deleteBeacon(String id) {
+        //String id = beacon.getId();
         database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_ID + " = " + id, null);
     }
 

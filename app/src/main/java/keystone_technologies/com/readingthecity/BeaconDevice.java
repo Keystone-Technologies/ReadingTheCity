@@ -14,7 +14,7 @@ public class BeaconDevice {
     private Date date;
     private String url;
     private String description;
-    private boolean hasParent;
+    private int notified;
 
     public BeaconDevice() {
     }
@@ -112,5 +112,9 @@ public class BeaconDevice {
 
     public String getDescription() {
         return description;
+    }
+
+    public int getNotified() {
+        return notified;
     }
 }

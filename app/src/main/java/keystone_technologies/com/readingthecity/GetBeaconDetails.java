@@ -108,14 +108,23 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
 
 
                 if (value.has("parent")) {
+                    if (dataSource.isBeaconInDB(value.getString("_id"))) {
+                        dataSource.deleteBeacon(value.getString("_id"));
+                    }
                     dataSource.createBeacon(new Date().toString(), value.getString("name"),
                             value.getString("_id"), value.getString("parent"));
                     new GetBeaconDetails(value.get("parent").toString()).execute();
                 } else {
+                    if (dataSource.isBeaconInDB(value.getString("_id"))) {
+                        dataSource.deleteBeacon(value.getString("_id"));
+                    }
                     dataSource.createBeacon(new Date().toString(), value.getString("name"),
                             value.getString("_id"));
-                    BeaconTrackingService.postNotification(new BeaconDevice(value.getString("name"),
-                            value.getString("_id")), context);
+                    if (dataSource.hasNotBeenNotified(value.getString("_id"))) {
+                        BeaconTrackingService.postNotification(new BeaconDevice(value.getString("name"),
+                                value.getString("_id")), context);
+                        dataSource.setNotifiedFlag(value.getString("_id"));
+                    }
                 }
             }
         } catch (Exception e) {
