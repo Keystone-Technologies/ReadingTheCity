@@ -11,6 +11,7 @@ import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -24,7 +25,18 @@ public class SettingsActivity extends ListActivity {
         setContentView(R.layout.activity_settings);
 
         dataSource = new BeaconDataSource(this);
-        BeaconAdapter adapter = new BeaconAdapter(getBaseContext(), R.layout.beacon_cell, dataSource.getAllBeacons());
+        List<BeaconDevice> tempList = dataSource.getAllBeacons();
+        List<BeaconDevice> beaconList = new ArrayList<BeaconDevice>();
+
+        for (BeaconDevice bd : tempList) {
+            if (bd.getId() != null) {
+                if (!dataSource.hasNotBeenNotified(bd.getId())) {
+                    beaconList.add(bd);
+                }
+            }
+        }
+
+        BeaconAdapter adapter = new BeaconAdapter(getBaseContext(), R.layout.beacon_cell, beaconList);
         setListAdapter(adapter);
         adapter.notifyDataSetChanged();
     }
@@ -52,22 +64,22 @@ public class SettingsActivity extends ListActivity {
             Switch s = (Switch) v.findViewById(R.id.beaconName);
 
             if (s != null) {
-                if (items.get(position).getName() != null) {
-                    s.setText(items.get(position).getName());
-                    s.setChecked(items.get(position).getResponse() != 0);
-                    s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                        @Override
-                        public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                            if(isChecked) {
-                                //do stuff when Switch is ON
-                                dataSource.setYesResponse(compoundButton.getText().toString());
-                            } else {
-                                //do stuff when Switch if OFF
-                                dataSource.setNoResponse(compoundButton.getText().toString());
+
+                        s.setText(items.get(position).getName());
+                        s.setChecked(items.get(position).getResponse() != 0);
+                        s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                            @Override
+                            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                                if(isChecked) {
+                                    //do stuff when Switch is ON
+                                    dataSource.setYesResponse(compoundButton.getText().toString());
+                                } else {
+                                    //do stuff when Switch if OFF
+                                    dataSource.setNoResponse(compoundButton.getText().toString());
+                                }
                             }
-                        }
-                    });
-                }
+                        });
+
             }
             return v;
         }

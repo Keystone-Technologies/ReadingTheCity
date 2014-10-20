@@ -20,14 +20,16 @@ public class NotificationButtonListener extends BroadcastReceiver {
             cancelNotification(context, Constants.BEACON_NOTIFICATION_ID);
             BeaconDevice beacon = dataSource.getChildBeaconFromId(id);
             if (beacon != null) {
-                if (dataSource.hasNotBeenNotified(id)) {
+              //  if (dataSource.hasNotBeenNotified(id)) {
                     BeaconTrackingService.postNotification(beacon, context);
-                    dataSource.setNotifiedFlag(id);
-                }
+                dataSource.setNoResponse(beacon.getId());
+                    dataSource.setNotifiedFlag(beacon.getId());
+             //   }
             }
         } else {
             Toast.makeText(context, "NO BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
             dataSource.setNoResponse(id);
+            dataSource.setNotifiedFlag(id);
             cancelNotification(context, Constants.BEACON_NOTIFICATION_ID);
         }
     }

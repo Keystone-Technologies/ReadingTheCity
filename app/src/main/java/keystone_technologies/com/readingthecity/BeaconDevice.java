@@ -117,4 +117,8 @@ public class BeaconDevice {
     public int getNotified() {
         return notified;
     }
+
+    public void setNotified(int notified) {
+        this.notified = notified;
+    }
 }

@@ -113,15 +113,20 @@ public class BeaconDataSource {
 
     public boolean hasNotBeenNotified(String id) {
         List<BeaconDevice> beaconList = getAllBeacons();
+        boolean flag = false;
 
         for (BeaconDevice bd : beaconList) {
-            if (id.equals(bd.getId())) {
-                if (bd.getNotified() == 0) {
-                    return true;
+            if (bd.getId() != null) {
+                if (id.equals(bd.getId())) {
+                    if (bd.getNotified() == 0) {
+                        flag = true;
+                        break;
+                    }
                 }
             }
+
         }
-        return false;
+        return flag;
     }
 
     public void setYesResponse(String id) {
@@ -205,18 +210,30 @@ public class BeaconDataSource {
 
     public boolean isBeaconInDB(String id) {
         List<BeaconDevice> beaconList = getAllBeacons();
+        boolean flag = false;
 
         for (BeaconDevice bd : beaconList) {
-            if (id.equals(bd.getId())) {
-                return true;
+            if (bd.getId() != null) {
+                if (id.equals(bd.getId())) {
+                    flag = true;
+                    break;
+                }
             }
         }
-        return false;
+        return flag;
     }
 
     public void deleteBeacon(String id) {
-        //String id = beacon.getId();
+        open();
         database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_ID + " = " + id, null);
+        close();
+    }
+
+    public void deleteBeacon(BeaconDevice beacon) {
+        open();
+        String id = beacon.getId();
+        database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_ID + " = " + id, null);
+        close();
     }
 
     public List<BeaconDevice> getAllBeacons() {
@@ -251,20 +268,22 @@ public class BeaconDataSource {
         beacon.setId(cursor.getString(4));
         beacon.setParent(cursor.getString(5));
         beacon.setResponse(cursor.getInt(6));
+        beacon.setNotified(cursor.getInt(7));
         return beacon;
     }
 
     public BeaconDevice getChildBeaconFromId(String id) {
         List<BeaconDevice> beaconList = getAllBeacons();
+        BeaconDevice temp = new BeaconDevice();
 
         for (BeaconDevice bd : beaconList) {
             if (bd.hasParent()) {
                 if (id.equals(bd.getParent())) {
-                    return bd;
+                    temp = bd;
                 }
             }
 
         }
-        return null;
+        return temp;
     }
 }
