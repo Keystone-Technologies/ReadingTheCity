@@ -294,6 +294,7 @@ public class BeaconDataSource {
         beacon.setParent(cursor.getString(5));
         beacon.setResponse(cursor.getInt(6));
         beacon.setNotified(cursor.getInt(7));
+        beacon.setUrl(cursor.getString(8));
         return beacon;
     }
 

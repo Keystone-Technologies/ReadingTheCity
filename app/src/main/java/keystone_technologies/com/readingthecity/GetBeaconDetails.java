@@ -4,44 +4,18 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.estimote.sdk.Beacon;
-
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Array;
 import java.net.URLEncoder;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements Serializable {
 
@@ -105,34 +79,30 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
                 BeaconDataSource dataSource = new BeaconDataSource(context);
 
                 JSONObject value = row.getJSONObject("value");
-               // boolean notifiedValue = true;
-
 
                 if (value.has("parent")) {
                     if (dataSource.isBeaconInDB(value.getString("_id"))) {
-                        dataSource.updateBeaconUrl(value.getString("_id"), value.getString("url"));
-                        //notifiedValue = dataSource.hasNotBeenNotified("_id");
-                        //dataSource.deleteBeacon(value.getString("_id"));
+                        dataSource.updateBeaconUrl(value.getString("_id"), value.getJSONArray("url").get(0).toString());
                     } else {
                         dataSource.createBeacon(new Date().toString(), value.getString("name"),
-                                value.getString("_id"), value.getString("parent"), value.getString("url"));
+                                value.getString("_id"), value.getString("parent"), value.getJSONArray("url").get(0).toString());
                     }
 
                     new GetBeaconDetails(value.getString("parent")).execute();
                 } else {
                     if (dataSource.isBeaconInDB(value.getString("_id"))) {
-                        dataSource.updateBeaconUrl(value.getString("_id"), value.getString("url"));
+                        dataSource.updateBeaconUrl(value.getString("_id"), value.getJSONArray("url").get(0).toString());
                     } else {
                         dataSource.createBeacon(new Date().toString(), value.getString("name"),
-                                value.getString("_id"), value.getString("url"));
+                                value.getString("_id"), value.getJSONArray("url").get(0).toString());
                     }
 
-                    if (dataSource.hasNotBeenNotified(value.getString("_id"))) {
+                   // if (dataSource.hasNotBeenNotified(value.getString("_id"))) {
                         BeaconTrackingService.postNotification(new BeaconDevice(value.getString("name"),
-                                value.getString("_id")), context);
+                                value.getString("_id"), value.getJSONArray("url").get(0).toString()), context);
                         dataSource.setNoResponse(value.getString("_id"));
                         dataSource.setNotifiedFlag(value.getString("_id"));
-                    }
+                   // }
                 }
             }
         } catch (Exception e) {

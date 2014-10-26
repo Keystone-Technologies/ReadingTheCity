@@ -16,14 +16,14 @@
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_launcher"
+        android:src="@drawable/yes"
         android:contentDescription="@string/btn_yes"
         android:id="@+id/btnYes"/>
 
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_launcher"
+        android:src="@drawable/no"
         android:contentDescription="@string/btn_no"
         android:id="@+id/btnNo"/>
 

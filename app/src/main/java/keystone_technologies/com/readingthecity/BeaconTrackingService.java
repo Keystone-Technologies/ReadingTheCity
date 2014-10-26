@@ -77,6 +77,12 @@ public class BeaconTrackingService extends Service {
 
         notificationView.setTextViewText(R.id.location, beacon.getName());
 
+
+        Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
+        infoIntent.putExtra("url", beacon.getUrl());
+        PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
         Intent yesIntent = new Intent(c, NotificationButtonListener.class);
         yesIntent.setAction("Yes");
         yesIntent.putExtra("id", beacon.getId());
@@ -94,6 +100,7 @@ public class BeaconTrackingService extends Service {
         Notification notificationBeacon = new Notification.Builder(c)
                 .setSmallIcon(R.drawable.beacon_gray)
                 .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
+                .setContentIntent(pendingIntent)
                 .build();
 
         notificationBeacon.contentView = notificationView;

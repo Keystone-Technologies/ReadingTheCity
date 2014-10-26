@@ -19,9 +19,10 @@ public class BeaconDevice {
     public BeaconDevice() {
     }
 
-    public BeaconDevice(String name, String id) {
+    public BeaconDevice(String name, String id, String url) {
         this.id = id;
         this.name = name;
+        this.url = url;
     }
 
     public BeaconDevice(int major, int minor, String name, String parent, String id,
