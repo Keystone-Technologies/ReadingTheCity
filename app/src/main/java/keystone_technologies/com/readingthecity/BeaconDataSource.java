@@ -23,7 +23,7 @@ public class BeaconDataSource {
     private String[] allColumns = { ServiceTable.COLUMN_MAJOR, ServiceTable.COLUMN_MINOR,
             ServiceTable.COLUMN_DATE, ServiceTable.COLUMN_NAME,
             ServiceTable.COLUMN_ID, ServiceTable.COLUMN_PARENT, ServiceTable.COLUMN_RESPONSE,
-            ServiceTable.COLUMN_NOTIFIED};
+            ServiceTable.COLUMN_NOTIFIED, ServiceTable.COLUMN_URL};
 
     public BeaconDataSource(Context context) {
         dbServiceTable = new ServiceTable(context);
@@ -48,24 +48,26 @@ public class BeaconDataSource {
         close();
     }
 
-    public void createBeacon(String date, String name, String id) {
+    public void createBeacon(String date, String name, String id, String url) {
         open();
         ContentValues values = new ContentValues();
         values.put(ServiceTable.COLUMN_DATE, date);
         values.put(ServiceTable.COLUMN_NAME, name);
         values.put(ServiceTable.COLUMN_ID, id);
+        values.put(ServiceTable.COLUMN_URL, url);
 
         database.insert(ServiceTable.TABLE_SERVICE, null, values);
         close();
     }
 
-    public void createBeacon(String date, String name, String id, String parent) {
+    public void createBeacon(String date, String name, String id, String parent, String url) {
         open();
         ContentValues values = new ContentValues();
         values.put(ServiceTable.COLUMN_DATE, date);
         values.put(ServiceTable.COLUMN_NAME, name);
         values.put(ServiceTable.COLUMN_ID, id);
         values.put(ServiceTable.COLUMN_PARENT, parent);
+        values.put(ServiceTable.COLUMN_URL, url);
 
         database.insert(ServiceTable.TABLE_SERVICE, null, values);
         close();
@@ -152,39 +154,39 @@ public class BeaconDataSource {
         database.close();
     }
 
-    public void setId(int major, int minor, String id) {
-        open();
+//    public void setId(int major, int minor, String id) {
+//        open();
+//
+//        ContentValues values = new ContentValues();
+//        values.put(ServiceTable.COLUMN_ID, id);
+//
+//        String where = ServiceTable.COLUMN_MAJOR + "=?" + " AND " + ServiceTable.COLUMN_MINOR + "=?";
+//        String whereArgs[] = new String[] {String.valueOf(major), String.valueOf(minor)};
+//
+//        try {
+//            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+//        } catch (SQLException ex) {
+//            ex.printStackTrace();
+//        }
+//        database.close();
+//    }
 
-        ContentValues values = new ContentValues();
-        values.put(ServiceTable.COLUMN_ID, id);
-
-        String where = ServiceTable.COLUMN_MAJOR + "=?" + " AND " + ServiceTable.COLUMN_MINOR + "=?";
-        String whereArgs[] = new String[] {String.valueOf(major), String.valueOf(minor)};
-
-        try {
-            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        database.close();
-    }
-
-    public void setName(String id, String name) {
-        open();
-
-        ContentValues values = new ContentValues();
-        values.put(ServiceTable.COLUMN_NAME, name);
-
-        String where = ServiceTable.COLUMN_ID + "=?";
-        String whereArgs[] = new String[] {String.valueOf(id)};
-
-        try {
-            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        database.close();
-    }
+//    public void setName(String id, String name) {
+//        open();
+//
+//        ContentValues values = new ContentValues();
+//        values.put(ServiceTable.COLUMN_NAME, name);
+//
+//        String where = ServiceTable.COLUMN_ID + "=?";
+//        String whereArgs[] = new String[] {String.valueOf(id)};
+//
+//        try {
+//            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+//        } catch (SQLException ex) {
+//            ex.printStackTrace();
+//        }
+//        database.close();
+//    }
 
     public void setNoResponse(String id) {
         open();
@@ -223,16 +225,39 @@ public class BeaconDataSource {
         return flag;
     }
 
-    public void deleteBeacon(String id) {
+    public void updateBeaconUrl(String id, String url) {
         open();
-        database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_ID + " = " + id, null);
-        close();
+
+        ContentValues values = new ContentValues();
+
+        //if (getBeaconResponse(uuid) == 0) {
+        values.put(ServiceTable.COLUMN_URL, url);
+        //} else {
+        //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
+        // }
+
+        String where = ServiceTable.COLUMN_ID + "=?";
+        String whereArgs[] = new String[] {id};
+
+        try {
+            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+        } catch (SQLException e) {
+            Log.e("Error", e.toString());
+        }
+
+        database.close();
     }
 
+//    public void deleteBeacon(String id) {
+//        open();
+//        database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_ID + "='" + id + "'", null);
+//        close();
+//    }
+//
     public void deleteBeacon(BeaconDevice beacon) {
         open();
         String id = beacon.getId();
-        database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_ID + " = " + id, null);
+        database.delete(ServiceTable.TABLE_SERVICE, ServiceTable.COLUMN_ID + "=" + id, null);
         close();
     }
 
@@ -274,7 +299,7 @@ public class BeaconDataSource {
 
     public BeaconDevice getChildBeaconFromId(String id) {
         List<BeaconDevice> beaconList = getAllBeacons();
-        BeaconDevice temp = new BeaconDevice();
+        BeaconDevice temp = null;
 
         for (BeaconDevice bd : beaconList) {
             if (bd.hasParent()) {

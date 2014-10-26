@@ -17,26 +17,26 @@ public class NotificationButtonListener extends BroadcastReceiver {
         if (action.equals("Yes")) {
             Toast.makeText(context, "YES BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
             dataSource.setYesResponse(id);
-            cancelNotification(context, Constants.BEACON_NOTIFICATION_ID);
+            cancelNotification(context);
             BeaconDevice beacon = dataSource.getChildBeaconFromId(id);
             if (beacon != null) {
-              //  if (dataSource.hasNotBeenNotified(id)) {
+                if (dataSource.hasNotBeenNotified(beacon.getId())) {
                     BeaconTrackingService.postNotification(beacon, context);
                 dataSource.setNoResponse(beacon.getId());
                     dataSource.setNotifiedFlag(beacon.getId());
-             //   }
+                }
             }
         } else {
             Toast.makeText(context, "NO BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
-            dataSource.setNoResponse(id);
-            dataSource.setNotifiedFlag(id);
-            cancelNotification(context, Constants.BEACON_NOTIFICATION_ID);
+          //  dataSource.setNoResponse(id);
+           // dataSource.setNotifiedFlag(id);
+            cancelNotification(context);
         }
     }
 
-    public void cancelNotification(Context ctx, int notifyId) {
+    public void cancelNotification(Context ctx) {
         String ns = Context.NOTIFICATION_SERVICE;
         NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(ns);
-        notificationManager.cancel(notifyId);
+        notificationManager.cancel(Constants.BEACON_NOTIFICATION_ID);
     }
 }

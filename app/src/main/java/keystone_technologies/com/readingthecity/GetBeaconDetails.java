@@ -105,31 +105,28 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
                 BeaconDataSource dataSource = new BeaconDataSource(context);
 
                 JSONObject value = row.getJSONObject("value");
-                boolean notifiedValue = true;
+               // boolean notifiedValue = true;
 
 
                 if (value.has("parent")) {
                     if (dataSource.isBeaconInDB(value.getString("_id"))) {
-                        notifiedValue = dataSource.hasNotBeenNotified("_id");
-                        dataSource.deleteBeacon(value.getString("_id"));
-                    }
-                    dataSource.createBeacon(new Date().toString(), value.getString("name"),
-                            value.getString("_id"), value.getString("parent"));
-                    if (!notifiedValue) {
-                        dataSource.setNotifiedFlag(value.getString("_id"));
+                        dataSource.updateBeaconUrl(value.getString("_id"), value.getString("url"));
+                        //notifiedValue = dataSource.hasNotBeenNotified("_id");
+                        //dataSource.deleteBeacon(value.getString("_id"));
+                    } else {
+                        dataSource.createBeacon(new Date().toString(), value.getString("name"),
+                                value.getString("_id"), value.getString("parent"), value.getString("url"));
                     }
 
-                    new GetBeaconDetails(value.get("parent").toString()).execute();
+                    new GetBeaconDetails(value.getString("parent")).execute();
                 } else {
                     if (dataSource.isBeaconInDB(value.getString("_id"))) {
-                        notifiedValue = dataSource.hasNotBeenNotified("_id");
-                        dataSource.deleteBeacon(value.getString("_id"));
+                        dataSource.updateBeaconUrl(value.getString("_id"), value.getString("url"));
+                    } else {
+                        dataSource.createBeacon(new Date().toString(), value.getString("name"),
+                                value.getString("_id"), value.getString("url"));
                     }
-                    dataSource.createBeacon(new Date().toString(), value.getString("name"),
-                            value.getString("_id"));
-                    if (!notifiedValue) {
-                        dataSource.setNotifiedFlag(value.getString("_id"));
-                    }
+
                     if (dataSource.hasNotBeenNotified(value.getString("_id"))) {
                         BeaconTrackingService.postNotification(new BeaconDevice(value.getString("name"),
                                 value.getString("_id")), context);

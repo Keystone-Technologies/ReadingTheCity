@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.Switch;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,22 +63,28 @@ public class SettingsActivity extends ListActivity {
             Switch s = (Switch) v.findViewById(R.id.beaconName);
 
             if (s != null) {
-
-                        s.setText(items.get(position).getName());
-                        s.setChecked(items.get(position).getResponse() != 0);
-                        s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                            @Override
-                            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                                if(isChecked) {
-                                    //do stuff when Switch is ON
-                                    dataSource.setYesResponse(compoundButton.getText().toString());
-                                } else {
-                                    //do stuff when Switch if OFF
-                                    dataSource.setNoResponse(compoundButton.getText().toString());
+                s.setText(items.get(position).getName());
+                s.setChecked(items.get(position).getResponse() != 0);
+                s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                        if(isChecked) {
+                            //do stuff when Switch is ON
+                            for (int i = 0; i < items.size(); i++) {
+                                if (compoundButton.getText().toString().equals(items.get(i).getName())) {
+                                    dataSource.setYesResponse(items.get(i).getId());
                                 }
                             }
-                        });
-
+                        } else {
+                            //do stuff when Switch if OFF
+                            for (int i = 0; i < items.size(); i++) {
+                                if (compoundButton.getText().toString().equals(items.get(i).getName())) {
+                                    dataSource.setNoResponse(items.get(i).getId());
+                                }
+                            }
+                        }
+                    }
+                });
             }
             return v;
         }
