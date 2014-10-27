@@ -29,9 +29,9 @@ public class SettingsActivity extends ListActivity {
 
         for (BeaconDevice bd : tempList) {
             if (bd.getId() != null) {
-                if (!dataSource.hasNotBeenNotified(bd.getId())) {
+               // if (!dataSource.hasNotBeenNotified(bd.getId())) {
                     beaconList.add(bd);
-                }
+                //}
             }
         }
 

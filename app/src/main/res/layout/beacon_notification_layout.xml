@@ -1,30 +1,51 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<RelativeLayout
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="30dp"
+        android:layout_margin="20dp"
+        android:src="@drawable/questionmark" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/notification"/>
+        android:text="adflajsd;jas;lfjasdlalfals"
+        android:id="@+id/beaconName"
+        android:layout_alignTop="@+id/imageView"
+        android:layout_toEndOf="@+id/imageView"
+        android:textSize="14dp"
+        android:textIsSelectable="false"
+        android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/location"/>
+        android:text="this is some long test. this is some long test. this is some long test. this is some long test."
+        android:id="@+id/textView2"
+        android:layout_toEndOf="@+id/imageView"
+        android:layout_below="@+id/beaconName" />
 
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/yes"
-        android:contentDescription="@string/btn_yes"
-        android:id="@+id/btnYes"/>
+        android:id="@+id/btnYes"
+        android:layout_alignTop="@+id/beaconName"
+        android:layout_alignParentEnd="true"
+        android:src="@drawable/checkmark" />
 
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/no"
-        android:contentDescription="@string/btn_no"
-        android:id="@+id/btnNo"/>
-
-</LinearLayout>
+        android:id="@+id/btnNo"
+        android:layout_below="@+id/btnYes"
+        android:layout_alignParentEnd="true"
+        android:src="@drawable/xmark" />
+</RelativeLayout>

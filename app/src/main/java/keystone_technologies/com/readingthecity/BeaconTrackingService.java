@@ -75,7 +75,7 @@ public class BeaconTrackingService extends Service {
         /** set a custom layout to the notification in notification drawer  */
         RemoteViews notificationView = new RemoteViews(c.getPackageName(), R.layout.beacon_notification_layout);
 
-        notificationView.setTextViewText(R.id.location, beacon.getName());
+        notificationView.setTextViewText(R.id.beaconName, beacon.getName());
 
 
         Intent infoIntent = new Intent(c, BeaconInfoActivity.class);

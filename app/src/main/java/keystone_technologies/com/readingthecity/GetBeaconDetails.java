@@ -101,8 +101,8 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
                         BeaconTrackingService.postNotification(new BeaconDevice(value.getString("name"),
                                 value.getString("_id"), value.getJSONArray("url").get(0).toString()), context);
                         dataSource.setNoResponse(value.getString("_id"));
-                        dataSource.setNotifiedFlag(value.getString("_id"));
-                   // }
+                       // dataSource.setNotifiedFlag(value.getString("_id"));
+                  //  }
                 }
             }
         } catch (Exception e) {

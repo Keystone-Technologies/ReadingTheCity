@@ -73,63 +73,63 @@ public class BeaconDataSource {
         close();
     }
 
-    public int getBeaconResponse(String id) {
-        open();
+//    public int getBeaconResponse(String id) {
+//        open();
+//
+//        int response = 0;
+//
+//        String[] result_column = new String[] {ServiceTable.COLUMN_ID, ServiceTable.COLUMN_RESPONSE};
+//        String where = ServiceTable.COLUMN_ID + "=" + id;
+//
+//        String whereArgs[] = null;
+//        String groupBy = null;
+//        String having = null;
+//        String order = null;
+//
+//        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, result_column, where, whereArgs, groupBy, having, order);
+//        int RESPONSE_INDEX = cursor.getColumnIndexOrThrow(ServiceTable.COLUMN_RESPONSE);
+//        while (cursor.moveToNext()) {
+//            response = cursor.getInt(RESPONSE_INDEX);
+//        }
+//        cursor.close();
+//        return response;
+//    }
 
-        int response = 0;
+//    public void setNotifiedFlag(String id) {
+//        open();
+//
+//        ContentValues values = new ContentValues();
+//        values.put(ServiceTable.COLUMN_NOTIFIED, 1);
+//
+//        String where = ServiceTable.COLUMN_ID + "=?";
+//        String whereArgs[] = new String[] {id};
+//
+//        try {
+//            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
+//        } catch (SQLException e) {
+//            Log.e("Error", e.toString());
+//        }
+//
+//        database.close();
+//    }
 
-        String[] result_column = new String[] {ServiceTable.COLUMN_ID, ServiceTable.COLUMN_RESPONSE};
-        String where = ServiceTable.COLUMN_ID + "=" + id;
-
-        String whereArgs[] = null;
-        String groupBy = null;
-        String having = null;
-        String order = null;
-
-        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, result_column, where, whereArgs, groupBy, having, order);
-        int RESPONSE_INDEX = cursor.getColumnIndexOrThrow(ServiceTable.COLUMN_RESPONSE);
-        while (cursor.moveToNext()) {
-            response = cursor.getInt(RESPONSE_INDEX);
-        }
-        cursor.close();
-        return response;
-    }
-
-    public void setNotifiedFlag(String id) {
-        open();
-
-        ContentValues values = new ContentValues();
-        values.put(ServiceTable.COLUMN_NOTIFIED, 1);
-
-        String where = ServiceTable.COLUMN_ID + "=?";
-        String whereArgs[] = new String[] {id};
-
-        try {
-            database.update(ServiceTable.TABLE_SERVICE, values, where, whereArgs);
-        } catch (SQLException e) {
-            Log.e("Error", e.toString());
-        }
-
-        database.close();
-    }
-
-    public boolean hasNotBeenNotified(String id) {
-        List<BeaconDevice> beaconList = getAllBeacons();
-        boolean flag = false;
-
-        for (BeaconDevice bd : beaconList) {
-            if (bd.getId() != null) {
-                if (id.equals(bd.getId())) {
-                    if (bd.getNotified() == 0) {
-                        flag = true;
-                        break;
-                    }
-                }
-            }
-
-        }
-        return flag;
-    }
+//    public boolean hasNotBeenNotified(String id) {
+//        List<BeaconDevice> beaconList = getAllBeacons();
+//        boolean flag = false;
+//
+//        for (BeaconDevice bd : beaconList) {
+//            if (bd.getId() != null) {
+//                if (id.equals(bd.getId())) {
+//                    if (bd.getNotified() == 0) {
+//                        flag = true;
+//                        break;
+//                    }
+//                }
+//            }
+//
+//        }
+//        return flag;
+//    }
 
     public void setYesResponse(String id) {
         open();
