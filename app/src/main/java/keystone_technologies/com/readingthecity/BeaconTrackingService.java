@@ -6,16 +6,10 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.media.Image;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.Button;
-import android.widget.ImageButton;
 import android.widget.RemoteViews;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.estimote.sdk.Beacon;
@@ -26,26 +20,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Random;
 
 public class BeaconTrackingService extends Service {
 
     private static BeaconManager beaconManager;
-    private List<BeaconDevice> beaconList;
-    private BeaconDataSource dataSource;
-
+    private List<Details> beaconList;
+    private BeaconDataSource beaconDataSource;
+    private DetailsDataSource detailsDataSource;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -56,8 +40,9 @@ public class BeaconTrackingService extends Service {
     public void onCreate() {
         Toast.makeText(this, "Service created!", Toast.LENGTH_LONG).show();
 
-        beaconList = new ArrayList<BeaconDevice>();
-        dataSource = new BeaconDataSource(this);
+        beaconList = new ArrayList<Details>();
+        beaconDataSource = new BeaconDataSource(this);
+        detailsDataSource = new DetailsDataSource(this);
 
         beaconManager = new BeaconManager(this);
 
@@ -68,49 +53,56 @@ public class BeaconTrackingService extends Service {
                 .build());
     }
 
-    public static void postNotification(BeaconDevice beacon, Context c) {
+    public static void postNotification(Details detail, Context c) {
 
         NotificationManager notificationManager = (NotificationManager) c.getSystemService(NOTIFICATION_SERVICE);
 
         /** set a custom layout to the notification in notification drawer  */
         RemoteViews notificationView = new RemoteViews(c.getPackageName(), R.layout.beacon_notification_layout);
 
-        notificationView.setTextViewText(R.id.beaconName, beacon.getName());
+        try {
+            JSONObject jsonObject = new JSONObject(detail.getDetail());
+            JSONArray jsonArray = jsonObject.getJSONArray("rows");
+            //for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject row = jsonArray.getJSONObject(0);
+            JSONObject value = row.getJSONObject("value");
+            notificationView.setTextViewText(R.id.detailName, value.getString("name"));
+            notificationView.setTextViewText(R.id.detailDescription, value.getString("description"));
+            Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
+            infoIntent.putExtra("url", value.getString("url"));
+            PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 
-        Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
-        infoIntent.putExtra("url", beacon.getUrl());
-        PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            Intent yesIntent = new Intent(c, NotificationButtonListener.class);
+            yesIntent.setAction("Yes");
+            yesIntent.putExtra("id", value.getString("_id"));
 
+            PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
 
-        Intent yesIntent = new Intent(c, NotificationButtonListener.class);
-        yesIntent.setAction("Yes");
-        yesIntent.putExtra("id", beacon.getId());
+            Intent noIntent = new Intent(c, NotificationButtonListener.class);
+            noIntent.setAction("No");
+            noIntent.putExtra("id", value.getString("_id"));
 
-        PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
+            PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
 
-        Intent noIntent = new Intent(c, NotificationButtonListener.class);
-        noIntent.setAction("No");
-        noIntent.putExtra("id", beacon.getId());
+            Notification notificationBeacon = new Notification.Builder(c)
+                    .setSmallIcon(R.drawable.beacon_gray)
+                    .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
+                    .setContentIntent(pendingIntent)
+                    .build();
 
-        PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
+            notificationBeacon.contentView = notificationView;
+            notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
+           // }
+        } catch (Exception ex) {
 
-        Notification notificationBeacon = new Notification.Builder(c)
-                .setSmallIcon(R.drawable.beacon_gray)
-                .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
-                .setContentIntent(pendingIntent)
-                .build();
-
-        notificationBeacon.contentView = notificationView;
-        notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
-
+        }
     }
 
     public static void stopTrackingListener() {
         try {
-           // beaconManager.disconnect();
             beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
         } catch (RemoteException e) {
 
@@ -124,18 +116,6 @@ public class BeaconTrackingService extends Service {
 
         }
     }
-
-//    @Override
-//    public void onDestroy() {
-//        Toast.makeText(this, "Service stopped", Toast.LENGTH_LONG).show();
-//        try {
-//            beaconManager.disconnect();
-//            beaconManager.stopRanging(Constants.ALL_ESTIMOTE_BEACONS_REGION);
-//        } catch (RemoteException e) {
-//
-//        }
-//        super.onDestroy();
-//    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -157,18 +137,19 @@ public class BeaconTrackingService extends Service {
                         public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
 
                             if (!beacons.isEmpty()) {
-                                beaconList = dataSource.getAllBeacons();
-                                if (beaconList.isEmpty()) {
-                                    dataSource.createBeacon(beacons.get(0).getMajor(),
-                                            beacons.get(0).getMinor(), new Date().toString());
+                                if (beacons.get(0).getRssi() - beacons.get(1).getRssi() <= -5) {
+                                    if (!beaconDataSource.isBeaconInDB(beacons.get(0))) {
                                         new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
-                                } else {
-                                    if (compareBeaconToList(beacons.get(0))) {
-                                        dataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
-                                                new Date().toString());
-                                            new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                     } else {
-                                        // beacon less than 24 hours old so use it from db
+                                        if (isBeaconOld(beacons.get(0))) {
+                                            beaconDataSource.deleteBeacon(beacons.get(0));
+                                            new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
+                                        } else {
+                                            // get beacon from DB
+                                            String details = detailsDataSource.getDetailsFromDevice(
+                                                    beaconDataSource.getBeaconFromDB(beacons.get(0)));
+                                            Log.d("details are:", details);
+                                        }
                                     }
                                 }
                             }
@@ -180,55 +161,25 @@ public class BeaconTrackingService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private BeaconDevice parseJSON(String result) {
+    private boolean isBeaconOld(Beacon beacon) {
 
-        BeaconDevice beaconDevice = null;
-        try {
-            JSONObject jsonObject = new JSONObject(result);
-            JSONArray jsonArray = jsonObject.getJSONArray("rows");
-            JSONObject row = jsonArray.getJSONObject(0);
+        List<Device> beaconList = beaconDataSource.getAllBeacons();
+        boolean flag = false;
 
-            beaconDevice = new BeaconDevice(row.getInt("major"), row.getInt("minor"),
-                    row.getString("name"), row.getString("parent"),
-                    row.getString("id"), row.getString("url"),
-                    row.getString("description"));
-
-        } catch (JSONException ex) {
-            ex.printStackTrace();
-        }
-        return beaconDevice;
-    }
-
-
-    private BeaconDevice getBeaconFromList(Beacon beacon) {
-        for (BeaconDevice bd : beaconList) {
-            if (beacon.getMajor() == bd.getMajor()) {
-                if (beacon.getMinor() == bd.getMinor()) {
-                    return bd;
-                }
-            }
-        }
-        return null;
-    }
-
-    private boolean compareBeaconToList(Beacon beacon) {
-
-        boolean retVal = true;
-        for (BeaconDevice bd : beaconList) {
-            if (bd.getMajor() == beacon.getMajor()) {
-                if (bd.getMinor() == beacon.getMinor()) {
-                    if (isSameDay(bd.getDate(), new Date())) {
-                        retVal = false;
+        for (Device b : beaconList) {
+            if (b.getMajor() == beacon.getMajor()) {
+                if (b.getMinor() == beacon.getMinor()) {
+                    if (isSameDay(b.getDate(), new Date())) {
+                        flag = false;
                         break;
                     } else {
-                        beaconList.remove(bd);
-                        dataSource.deleteBeacon(bd);
+                        flag = true;
                         break;
                     }
                 }
             }
         }
-        return retVal;
+        return flag;
     }
 
     public static boolean isSameDay(Date date1, Date date2) {

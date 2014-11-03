@@ -17,8 +17,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="adflajsd;jas;lfjasdlalfals"
-        android:id="@+id/beaconName"
+        android:id="@+id/detailName"
         android:layout_alignTop="@+id/imageView"
         android:layout_toEndOf="@+id/imageView"
         android:textSize="14dp"
@@ -28,16 +27,15 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="this is some long test. this is some long test. this is some long test. this is some long test."
-        android:id="@+id/textView2"
+        android:id="@+id/detailDescription"
         android:layout_toEndOf="@+id/imageView"
-        android:layout_below="@+id/beaconName" />
+        android:layout_below="@+id/detailName" />
 
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/btnYes"
-        android:layout_alignTop="@+id/beaconName"
+        android:layout_alignTop="@+id/detailName"
         android:layout_alignParentEnd="true"
         android:src="@drawable/checkmark" />
 

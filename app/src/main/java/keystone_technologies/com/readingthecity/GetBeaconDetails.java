@@ -2,7 +2,6 @@ package keystone_technologies.com.readingthecity;
 
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -21,8 +20,6 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
 
     private String parentId;
     private StringBuilder sb = null;
-    private int major;
-    private int minor;
     private static Context context;
 
     public GetBeaconDetails(String parentId) {
@@ -30,11 +27,9 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
         this.parentId = parentId;
     }
 
-    public GetBeaconDetails(String parentId, int major, int minor, Context context) {
+    public GetBeaconDetails(String parentId, Context context) {
         super();
         this.parentId = parentId;
-        this.major = major;
-        this.minor = minor;
         this.context = context;
     }
 
@@ -76,33 +71,24 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject row = jsonArray.getJSONObject(i);
-                BeaconDataSource dataSource = new BeaconDataSource(context);
+                DetailsDataSource detailsDataSource = new DetailsDataSource(context);
 
                 JSONObject value = row.getJSONObject("value");
 
                 if (value.has("parent")) {
-                    if (dataSource.isBeaconInDB(value.getString("_id"))) {
-                        dataSource.updateBeaconUrl(value.getString("_id"), value.getJSONArray("url").get(0).toString());
-                    } else {
-                        dataSource.createBeacon(new Date().toString(), value.getString("name"),
-                                value.getString("_id"), value.getString("parent"), value.getJSONArray("url").get(0).toString());
+                    if (detailsDataSource.isDetailInDB(value.getString("_id"))) {
+                        detailsDataSource.deleteDetail(value.getString("_id"));
                     }
+                    detailsDataSource.createDetail(row.toString(), new Date().toString(), value.getString("_id"));
 
                     new GetBeaconDetails(value.getString("parent")).execute();
                 } else {
-                    if (dataSource.isBeaconInDB(value.getString("_id"))) {
-                        dataSource.updateBeaconUrl(value.getString("_id"), value.getJSONArray("url").get(0).toString());
-                    } else {
-                        dataSource.createBeacon(new Date().toString(), value.getString("name"),
-                                value.getString("_id"), value.getJSONArray("url").get(0).toString());
+                    if (detailsDataSource.isDetailInDB(value.getString("_id"))) {
+                        detailsDataSource.deleteDetail(value.getString("_id"));
                     }
+                    detailsDataSource.createDetail(row.toString(), new Date().toString(), value.getString("_id"));
 
-                   // if (dataSource.hasNotBeenNotified(value.getString("_id"))) {
-                        BeaconTrackingService.postNotification(new BeaconDevice(value.getString("name"),
-                                value.getString("_id"), value.getJSONArray("url").get(0).toString()), context);
-                        dataSource.setNoResponse(value.getString("_id"));
-                       // dataSource.setNotifiedFlag(value.getString("_id"));
-                  //  }
+                    BeaconTrackingService.postNotification(new Details(row.toString(), new Date(), value.getString("_id")), context);
                 }
             }
         } catch (Exception e) {
