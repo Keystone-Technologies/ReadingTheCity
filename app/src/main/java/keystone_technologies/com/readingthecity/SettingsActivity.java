@@ -63,10 +63,7 @@ public class SettingsActivity extends ListActivity {
             if (s != null) {
                 try {
                     JSONObject jsonObject = new JSONObject(items.get(position).getDetail());
-                    JSONArray jsonArray = jsonObject.getJSONArray("rows");
-                    //for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject row = jsonArray.getJSONObject(0);
-                    JSONObject value = row.getJSONObject("value");
+                    JSONObject value = jsonObject.getJSONObject("value");
                     s.setText(value.getString("name"));
                     s.setChecked(items.get(position).getResponse() != 0);
                     s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
