@@ -6,6 +6,8 @@
     <Switch
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:textOff="@string/btn_no"
+        android:textOn="@string/btn_yes"
         android:id="@+id/detailName"/>
 
 </LinearLayout>
