@@ -21,7 +21,6 @@ public class NotificationButtonListener extends BroadcastReceiver {
             Details detail = detailDataSource.getChildDetailFromId(id);
             if (detail != null) {
                 BeaconTrackingService.postNotification(detail, context);
-                detailDataSource.setNoResponse(detail.getId());
             }
         } else {
             Toast.makeText(context, "NO BUTTON PRESSED!", Toast.LENGTH_SHORT).show();

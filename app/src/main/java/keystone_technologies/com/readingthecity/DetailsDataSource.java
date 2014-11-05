@@ -21,8 +21,7 @@ public class DetailsDataSource {
 
     private SQLiteDatabase database;
     private DetailsTable dbDetailsTable;
-    private String[] allColumns = { DetailsTable.COLUMN_ID, DetailsTable.COLUMN_DETAILS,
-            DetailsTable.COLUMN_DATE, DetailsTable.COLUMN_RESPONSE};
+    private String[] allColumns = { DetailsTable.COLUMN_DETAILS};
 
     public DetailsDataSource(Context context) {
         dbDetailsTable = new DetailsTable(context);
@@ -40,20 +39,24 @@ public class DetailsDataSource {
         open();
         ContentValues values = new ContentValues();
         values.put(DetailsTable.COLUMN_DETAILS, detail);
-        values.put(DetailsTable.COLUMN_DATE, date);
-        values.put(DetailsTable.COLUMN_ID, id);
 
         database.insert(DetailsTable.TABLE_DETAILS, null, values);
         close();
     }
 
-    public String getDetailsFromDevice(Device device) {
+    public String getDetailsFromId(String id) {
         String details = null;
 
         List<Details> detailsList = getAllDetails();
         for (Details d : detailsList) {
-            if (d.getId().equals(device.getId())) {
-                details = d.getDetail();
+            try {
+                JSONObject jsonObject = new JSONObject(d.getDetail());
+                if (id.equals(jsonObject.getString("parent"))) {
+                    details = d.getDetail();
+                    break;
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
         return details;
@@ -65,15 +68,14 @@ public class DetailsDataSource {
         try {
             for (Details d : detailsList) {
                 JSONObject jsonObject = new JSONObject(d.getDetail());
-                JSONArray jsonArray = jsonObject.getJSONArray("rows");
-                JSONObject row = jsonArray.getJSONObject(0);
-                JSONObject value = row.getJSONObject("value");
-                if (id.equals(value.getString("parent"))) {
+               // JSONObject value = jsonObject.getJSONObject("value");
+                if (id.equals(jsonObject.getString("parent"))) {
                     detail = d;
+                    break;
                 }
             }
         } catch (Exception ex) {
-
+            ex.printStackTrace();
         }
         return detail;
     }
@@ -100,69 +102,72 @@ public class DetailsDataSource {
 //        return response;
 //    }
 
-    public void setYesResponse(String id) {
-        open();
-
-        ContentValues values = new ContentValues();
-
-        //if (getBeaconResponse(uuid) == 0) {
-            values.put(DetailsTable.COLUMN_RESPONSE, 1);
-        //} else {
-        //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
-       // }
-
-        String where = DetailsTable.COLUMN_ID + "=?";
-        String whereArgs[] = new String[] {id};
-
-        try {
-            database.update(DetailsTable.TABLE_DETAILS, values, where, whereArgs);
-        } catch (SQLException e) {
-            Log.e("Error", e.toString());
-        }
-
-        database.close();
-    }
-
-    public void setNoResponse(String id) {
-        open();
-
-        ContentValues values = new ContentValues();
-
-        //if (getBeaconResponse(uuid) == 0) {
-        values.put(DetailsTable.COLUMN_RESPONSE, 0);
-        //} else {
-        //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
-        // }
-
-        String where = DetailsTable.COLUMN_ID + "=?";
-        String whereArgs[] = new String[] {id};
-
-        try {
-            database.update(DetailsTable.TABLE_DETAILS, values, where, whereArgs);
-        } catch (SQLException e) {
-            Log.e("Error", e.toString());
-        }
-        database.close();
-    }
+//    public void setYesResponse(String id) {
+//        open();
+//
+//        ContentValues values = new ContentValues();
+//
+//        //if (getBeaconResponse(uuid) == 0) {
+//            values.put(DetailsTable.COLUMN_RESPONSE, 1);
+//        //} else {
+//        //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
+//       // }
+//
+//        String where = DetailsTable.COLUMN_ID + "=?";
+//        String whereArgs[] = new String[] {id};
+//
+//        try {
+//            database.update(DetailsTable.TABLE_DETAILS, values, where, whereArgs);
+//        } catch (SQLException e) {
+//            Log.e("Error", e.toString());
+//        }
+//
+//        database.close();
+//    }
+//
+//    public void setNoResponse(String id) {
+//        open();
+//
+//        ContentValues values = new ContentValues();
+//
+//        //if (getBeaconResponse(uuid) == 0) {
+//        values.put(DetailsTable.COLUMN_RESPONSE, 0);
+//        //} else {
+//        //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
+//        // }
+//
+//        String where = DetailsTable.COLUMN_ID + "=?";
+//        String whereArgs[] = new String[] {id};
+//
+//        try {
+//            database.update(DetailsTable.TABLE_DETAILS, values, where, whereArgs);
+//        } catch (SQLException e) {
+//            Log.e("Error", e.toString());
+//        }
+//        database.close();
+//    }
 
     public boolean isDetailInDB(String id) {
         List<Details> detailsList = getAllDetails();
         boolean flag = false;
 
-        for (Details bd : detailsList) {
-            if (bd.getId() != null) {
-                if (id.equals(bd.getId())) {
+        for (Details d : detailsList) {
+            try {
+                JSONObject jsonObject = new JSONObject(d.getDetail());
+                if (id.equals(jsonObject.getString("_id"))) {
                     flag = true;
                     break;
                 }
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         }
         return flag;
     }
 
-    public void deleteDetail(String id) {
+    public void deleteDetail(String detail) {
         open();
-        database.delete(DetailsTable.TABLE_DETAILS, DetailsTable.COLUMN_ID + "='" + id + "'", null);
+        database.delete(DetailsTable.TABLE_DETAILS, DetailsTable.COLUMN_DETAILS + "='" + detail + "'", null);
         close();
     }
 
@@ -186,15 +191,7 @@ public class DetailsDataSource {
 
     private Details cursorToBeacon(Cursor cursor) {
         Details detail = new Details();
-        detail.setId(cursor.getString(0));
-        detail.setDetail(cursor.getString(1));
-        String date = cursor.getString(2);
-        try {
-            detail.setDate(new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy").parse(date));
-        } catch (ParseException ex) {
-            ex.printStackTrace();
-        }
-        detail.setResponse(cursor.getInt(3));
+        detail.setDetail(cursor.getString(0));
         return detail;
     }
 }

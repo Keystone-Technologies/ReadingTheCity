@@ -44,19 +44,23 @@ public class BeaconDataSource {
         close();
     }
 
-    public Device getBeaconFromDB(Beacon beacon) {
-        List<Device> beaconList = getAllBeacons();
-        Device beaconDevice = new Device();
+//    public String getIdFromDB(Beacon beacon) {
+//        List<Device> beaconList = getAllBeacons();
+//        String id = null;
+//
+//        for (Device d : beaconList) {
+//            if (d.getMajor() == beacon.getMajor()) {
+//                if (d.getMinor() == beacon.getMinor()) {
+//                    if (d.getId() != null) {
+//                        id = d.getId();
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//        return id;
+//    }
 
-        for (Device d : beaconList) {
-            if (d.getMajor() == beacon.getMajor()) {
-                if (d.getMinor() == beacon.getMinor()) {
-                    beaconDevice = d;
-                }
-            }
-        }
-        return beaconDevice;
-    }
 
     public boolean isBeaconInDB(Beacon beacon) {
         List<Device> beaconList = getAllBeacons();

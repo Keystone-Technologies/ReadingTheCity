@@ -119,9 +119,9 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
             BeaconDataSource dataSource = new BeaconDataSource(context);
 
             if (value.has("parent")) {
+                new GetBeaconDetails(value.get("parent").toString(), context).execute();
                 dataSource.createBeacon(value.getInt("major"), value.getInt("minor"),
                         new Date().toString(), value.getString("_id"));
-                new GetBeaconDetails(value.get("parent").toString(), context).execute();
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -27,9 +27,9 @@ import java.util.List;
 public class BeaconTrackingService extends Service {
 
     private static BeaconManager beaconManager;
-    private List<Details> beaconList;
     private BeaconDataSource beaconDataSource;
     private DetailsDataSource detailsDataSource;
+    private Context context;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -40,7 +40,7 @@ public class BeaconTrackingService extends Service {
     public void onCreate() {
         Toast.makeText(this, "Service created!", Toast.LENGTH_LONG).show();
 
-        beaconList = new ArrayList<Details>();
+        context = this;
         beaconDataSource = new BeaconDataSource(this);
         detailsDataSource = new DetailsDataSource(this);
 
@@ -92,7 +92,6 @@ public class BeaconTrackingService extends Service {
 
             notificationBeacon.contentView = notificationView;
             notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
-           // }
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -128,29 +127,13 @@ public class BeaconTrackingService extends Service {
                     Toast.makeText(getApplicationContext(), "Cannot start ranging", Toast.LENGTH_LONG).show();
                 }
 
-                    beaconManager.setRangingListener(new BeaconManager.RangingListener() {
+                beaconManager.setRangingListener(new BeaconManager.RangingListener() {
 
-                        @Override
-                        public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
-
-                            if (!beacons.isEmpty()) {
-                                if (beacons.size() > 1) {
-                                    if (beacons.get(0).getRssi() - beacons.get(1).getRssi() <= -5) {
-                                        if (!beaconDataSource.isBeaconInDB(beacons.get(0))) {
-                                            new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
-                                        } else {
-                                            if (isBeaconOld(beacons.get(0))) {
-                                                beaconDataSource.deleteBeacon(beacons.get(0));
-                                                new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
-                                            } else {
-                                                // get beacon from DB
-                                                String details = detailsDataSource.getDetailsFromDevice(
-                                                        beaconDataSource.getBeaconFromDB(beacons.get(0)));
-                                           //     Log.d("details are:", details);
-                                            }
-                                        }
-                                    }
-                                } else {
+                    @Override
+                    public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
+                        if (!beacons.isEmpty()) {
+                            if (beacons.size() > 1) {
+                                if (beacons.get(0).getRssi() - beacons.get(1).getRssi() >= 5) {
                                     if (!beaconDataSource.isBeaconInDB(beacons.get(0))) {
                                         new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                     } else {
@@ -159,18 +142,52 @@ public class BeaconTrackingService extends Service {
                                             new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                         } else {
                                             // get beacon from DB
-                                            String details = detailsDataSource.getDetailsFromDevice(
-                                                    beaconDataSource.getBeaconFromDB(beacons.get(0)));
-                                          //  Log.d("details are:", details);
+                                            try {
+                                              //  String id = beaconDataSource.getIdFromDB(beacons.get(0));
+                                              //  if (id != null) {
+                                               //     JSONObject jsonObject = new JSONObject
+                                               //             (detailsDataSource.getDetailsFromId(id));
+                                               //     new GetBeaconDetails(jsonObject.get("parent").toString(),
+                                                //            context).execute();
+                                             //   } else {
+                                              //      beaconDataSource.deleteBeacon(beacons.get(0));
+                                              //  }
+                                            } catch (Exception ex) {
+                                                ex.printStackTrace();
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                if (!beaconDataSource.isBeaconInDB(beacons.get(0))) {
+                                    new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
+                                } else {
+                                    if (isBeaconOld(beacons.get(0))) {
+                                        beaconDataSource.deleteBeacon(beacons.get(0));
+                                        new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
+                                    } else {
+                                        // get beacon from DB
+                                        try {
+//                                            String id = beaconDataSource.getIdFromDB(beacons.get(0));
+//                                            if (id != null) {
+//                                                JSONObject jsonObject = new JSONObject
+//                                                        (detailsDataSource.getDetailsFromId(id));
+//                                                new GetBeaconDetails(jsonObject.get("parent").toString(),
+//                                                        context).execute();
+//                                            } else {
+//                                                beaconDataSource.deleteBeacon(beacons.get(0));
+//                                            }
+                                        } catch (Exception ex) {
+                                            ex.printStackTrace();
                                         }
                                     }
                                 }
                             }
                         }
-                    });
+                    }
+                });
             }
         });
-
         return super.onStartCommand(intent, flags, startId);
     }
 

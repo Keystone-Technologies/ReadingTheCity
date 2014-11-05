@@ -9,8 +9,6 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.Switch;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -27,11 +25,6 @@ public class SettingsActivity extends ListActivity {
 
         detailsDataSource = new DetailsDataSource(this);
         List<Details> detailsList = detailsDataSource.getAllDetails();
-        //List<Details> detailsList = new ArrayList<Details>();
-
-        //for (Details d : tempList) {
-        //    detailsList.add(d.);
-       // }
 
         DetailAdapter adapter = new DetailAdapter(getBaseContext(), R.layout.detail_cell, detailsList);
         setListAdapter(adapter);
@@ -70,24 +63,22 @@ public class SettingsActivity extends ListActivity {
                         @Override
                         public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                             if(isChecked) {
-                                //do stuff when Switch is ON
-                               // for (int i = 0; i < items.size(); i++) {
-                                //    if (compoundButton.getText().toString().equals(items.get(i).getName())) {
-                                 //       dataSource.setYesResponse(items.get(i).getId());
-                                 //   }
-                               // }
+                                for (int i = 0; i < items.size(); i++) {
+                                    if (items.get(i).getDetail().contains(compoundButton.getText().toString())) {
+                                        detailsDataSource.setYesResponse(items.get(i).getId());
+                                   }
+                                }
                             } else {
-                                //do stuff when Switch if OFF
-                               // for (int i = 0; i < items.size(); i++) {
-                               //     if (compoundButton.getText().toString().equals(items.get(i).getName())) {
-                                //        dataSource.setNoResponse(items.get(i).getId());
-                               //     }
-                               // }
+                                for (int i = 0; i < items.size(); i++) {
+                                    if (items.get(i).getDetail().contains(compoundButton.getText().toString())) {
+                                        detailsDataSource.setNoResponse(items.get(i).getId());
+                                    }
+                                }
                             }
                         }
                     });
                 } catch (Exception ex) {
-
+                    ex.printStackTrace();
                 }
             }
             return v;
