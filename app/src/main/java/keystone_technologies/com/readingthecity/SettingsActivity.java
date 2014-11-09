@@ -56,22 +56,27 @@ public class SettingsActivity extends ListActivity {
             if (s != null) {
                 try {
                     JSONObject jsonObject = new JSONObject(items.get(position).getDetail());
-                    JSONObject value = jsonObject.getJSONObject("value");
-                    s.setText(value.getString("name"));
-                    s.setChecked(items.get(position).getResponse() != 0);
+                    if (jsonObject.isNull("value")) {
+                        s.setText(jsonObject.getString("name"));
+                    } else {
+                        JSONObject value = jsonObject.getJSONObject("value");
+                        s.setText(value.getString("name"));
+                    }
+
+                  //  s.setChecked(items.get(position).getResponse() != 0);
                     s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                         @Override
                         public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                             if(isChecked) {
                                 for (int i = 0; i < items.size(); i++) {
                                     if (items.get(i).getDetail().contains(compoundButton.getText().toString())) {
-                                        detailsDataSource.setYesResponse(items.get(i).getId());
+                                      //  detailsDataSource.setYesResponse(items.get(i).getId());
                                    }
                                 }
                             } else {
                                 for (int i = 0; i < items.size(); i++) {
                                     if (items.get(i).getDetail().contains(compoundButton.getText().toString())) {
-                                        detailsDataSource.setNoResponse(items.get(i).getId());
+                                     //   detailsDataSource.setNoResponse(items.get(i).getId());
                                     }
                                 }
                             }

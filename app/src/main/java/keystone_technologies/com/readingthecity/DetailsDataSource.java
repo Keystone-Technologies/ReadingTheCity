@@ -63,7 +63,7 @@ public class DetailsDataSource {
     }
 
     public Details getChildDetailFromId(String id) {
-        Details detail = new Details();
+        Details detail = null;
         List<Details> detailsList = getAllDetails();
         try {
             for (Details d : detailsList) {

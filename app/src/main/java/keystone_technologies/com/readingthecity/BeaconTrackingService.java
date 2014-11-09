@@ -61,28 +61,52 @@ public class BeaconTrackingService extends Service {
         RemoteViews notificationView = new RemoteViews(c.getPackageName(), R.layout.beacon_notification_layout);
 
         try {
-            JSONObject jsonObject = new JSONObject(detail.getDetail());
-            JSONObject value = jsonObject.getJSONObject("value");
-            notificationView.setTextViewText(R.id.detailName, value.getString("name"));
-            notificationView.setTextViewText(R.id.detailDescription, value.getString("description"));
             Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
-            infoIntent.putExtra("url", value.getString("url"));
             PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
+            JSONObject jsonObject = new JSONObject(detail.getDetail());
+            if (jsonObject.isNull("value")) {
+                notificationView.setTextViewText(R.id.detailName, jsonObject.getString("name"));
+                notificationView.setTextViewText(R.id.detailDescription, jsonObject.getString("description"));
 
-            Intent yesIntent = new Intent(c, NotificationButtonListener.class);
-            yesIntent.setAction("Yes");
-            yesIntent.putExtra("id", value.getString("_id"));
+                infoIntent.putExtra("url", jsonObject.getString("url"));
 
-            PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
 
-            Intent noIntent = new Intent(c, NotificationButtonListener.class);
-            noIntent.setAction("No");
-            noIntent.putExtra("id", value.getString("_id"));
 
-            PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
+                Intent yesIntent = new Intent(c, NotificationButtonListener.class);
+                yesIntent.setAction("Yes");
+                yesIntent.putExtra("id", jsonObject.getString("_id"));
+
+                PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
+
+                Intent noIntent = new Intent(c, NotificationButtonListener.class);
+                noIntent.setAction("No");
+                noIntent.putExtra("id", jsonObject.getString("_id"));
+            } else {
+                JSONObject value = jsonObject.getJSONObject("value");
+                notificationView.setTextViewText(R.id.detailName, value.getString("name"));
+                notificationView.setTextViewText(R.id.detailDescription, value.getString("description"));
+               // Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
+                infoIntent.putExtra("url", value.getString("url"));
+              //  PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+                Intent yesIntent = new Intent(c, NotificationButtonListener.class);
+                yesIntent.setAction("Yes");
+                yesIntent.putExtra("id", value.getString("_id"));
+
+                PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
+
+                Intent noIntent = new Intent(c, NotificationButtonListener.class);
+                noIntent.setAction("No");
+                noIntent.putExtra("id", value.getString("_id"));
+
+                PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
+            }
+
 
             Notification notificationBeacon = new Notification.Builder(c)
                     .setSmallIcon(R.drawable.beacon_gray)

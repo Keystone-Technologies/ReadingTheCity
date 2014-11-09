@@ -16,7 +16,7 @@ public class NotificationButtonListener extends BroadcastReceiver {
 
         if (action.equals("Yes")) {
             Toast.makeText(context, "YES BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
-            detailDataSource.setYesResponse(id);
+           // detailDataSource.setYesResponse(id);
             cancelNotification(context);
             Details detail = detailDataSource.getChildDetailFromId(id);
             if (detail != null) {
