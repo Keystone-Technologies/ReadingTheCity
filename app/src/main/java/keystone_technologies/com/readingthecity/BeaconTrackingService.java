@@ -28,7 +28,7 @@ public class BeaconTrackingService extends Service {
 
     private static BeaconManager beaconManager;
     private BeaconDataSource beaconDataSource;
-    private DetailsDataSource detailsDataSource;
+    private static DetailsDataSource detailsDataSource;
     private Context context;
 
     @Override
@@ -54,68 +54,80 @@ public class BeaconTrackingService extends Service {
     }
 
     public static void postNotification(Details detail, Context c) {
-
-        NotificationManager notificationManager = (NotificationManager) c.getSystemService(NOTIFICATION_SERVICE);
-
-        /** set a custom layout to the notification in notification drawer  */
-        RemoteViews notificationView = new RemoteViews(c.getPackageName(), R.layout.beacon_notification_layout);
+        Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
+        PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         try {
-            Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
             JSONObject jsonObject = new JSONObject(detail.getDetail());
             if (jsonObject.isNull("value")) {
-                notificationView.setTextViewText(R.id.detailName, jsonObject.getString("name"));
-                notificationView.setTextViewText(R.id.detailDescription, jsonObject.getString("description"));
+                if (!detailsDataSource.isDetailInDB(jsonObject.getString("_id"))) {
+                    NotificationManager notificationManager = (NotificationManager) c.getSystemService(NOTIFICATION_SERVICE);
+                    /** set a custom layout to the notification in notification drawer  */
+                    RemoteViews notificationView = new RemoteViews(c.getPackageName(), R.layout.beacon_notification_layout);
+                    notificationView.setTextViewText(R.id.detailName, jsonObject.getString("name"));
+                    notificationView.setTextViewText(R.id.detailDescription, jsonObject.getString("description"));
 
-                infoIntent.putExtra("url", jsonObject.getString("url"));
+                    infoIntent.putExtra("url", jsonObject.getString("url"));
 
 
 
-                Intent yesIntent = new Intent(c, NotificationButtonListener.class);
-                yesIntent.setAction("Yes");
-                yesIntent.putExtra("id", jsonObject.getString("_id"));
+                    Intent yesIntent = new Intent(c, NotificationButtonListener.class);
+                    yesIntent.setAction("Yes");
+                    yesIntent.putExtra("id", jsonObject.getString("_id"));
 
-                PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
+                    PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                    notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
 
-                Intent noIntent = new Intent(c, NotificationButtonListener.class);
-                noIntent.setAction("No");
-                noIntent.putExtra("id", jsonObject.getString("_id"));
+                    Intent noIntent = new Intent(c, NotificationButtonListener.class);
+                    noIntent.setAction("No");
+                    noIntent.putExtra("id", jsonObject.getString("_id"));
+                    PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                    notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
+
+                    Notification notificationBeacon = new Notification.Builder(c)
+                            .setSmallIcon(R.drawable.beacon_gray)
+                            .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
+                            .setContentIntent(pendingIntent)
+                            .build();
+
+                    notificationBeacon.contentView = notificationView;
+                    notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
+                }
             } else {
                 JSONObject value = jsonObject.getJSONObject("value");
-                notificationView.setTextViewText(R.id.detailName, value.getString("name"));
-                notificationView.setTextViewText(R.id.detailDescription, value.getString("description"));
-               // Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
-                infoIntent.putExtra("url", value.getString("url"));
-              //  PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                if (!detailsDataSource.isDetailInDB(value.getString("_id"))) {
+                    NotificationManager notificationManager = (NotificationManager) c.getSystemService(NOTIFICATION_SERVICE);
+                    /** set a custom layout to the notification in notification drawer  */
+                    RemoteViews notificationView = new RemoteViews(c.getPackageName(), R.layout.beacon_notification_layout);
+
+                    notificationView.setTextViewText(R.id.detailName, value.getString("name"));
+                    notificationView.setTextViewText(R.id.detailDescription, value.getString("description"));
+                    // Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
+                    infoIntent.putExtra("url", value.getString("url"));
+                    //  PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
 
-                Intent yesIntent = new Intent(c, NotificationButtonListener.class);
-                yesIntent.setAction("Yes");
-                yesIntent.putExtra("id", value.getString("_id"));
+                    Intent yesIntent = new Intent(c, NotificationButtonListener.class);
+                    yesIntent.setAction("Yes");
+                    yesIntent.putExtra("id", value.getString("_id"));
 
-                PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
+                    PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                    notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
 
-                Intent noIntent = new Intent(c, NotificationButtonListener.class);
-                noIntent.setAction("No");
-                noIntent.putExtra("id", value.getString("_id"));
+                    Intent noIntent = new Intent(c, NotificationButtonListener.class);
+                    noIntent.setAction("No");
+                    noIntent.putExtra("id", value.getString("_id"));
 
-                PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
+                    Notification notificationBeacon = new Notification.Builder(c)
+                            .setSmallIcon(R.drawable.beacon_gray)
+                            .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
+                            .setContentIntent(pendingIntent)
+                            .build();
+
+                    notificationBeacon.contentView = notificationView;
+                    notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
+                }
             }
-
-
-            Notification notificationBeacon = new Notification.Builder(c)
-                    .setSmallIcon(R.drawable.beacon_gray)
-                    .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_LIGHTS)
-                    .setContentIntent(pendingIntent)
-                    .build();
-
-            notificationBeacon.contentView = notificationView;
-            notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
         } catch (Exception ex) {
             ex.printStackTrace();
         }

@@ -154,10 +154,19 @@ public class DetailsDataSource {
         for (Details d : detailsList) {
             try {
                 JSONObject jsonObject = new JSONObject(d.getDetail());
-                if (id.equals(jsonObject.getString("_id"))) {
-                    flag = true;
-                    break;
+                if (jsonObject.isNull("value")) {
+                    if (id.equals(jsonObject.getString("_id"))) {
+                        flag = true;
+                        break;
+                    }
+                } else {
+                    JSONObject value = jsonObject.getJSONObject("value");
+                    if (id.equals(value.getString("_id"))) {
+                        flag = true;
+                        break;
+                    }
                 }
+
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
