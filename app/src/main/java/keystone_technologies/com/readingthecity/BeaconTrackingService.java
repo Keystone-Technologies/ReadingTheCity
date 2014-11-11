@@ -96,6 +96,15 @@ public class BeaconTrackingService extends Service {
 
                    // notificationsDataSource.createNotification(jsonObject.getString("_id"),
                     //        jsonObject.getString("name"));
+                } else {
+                    try {
+                        Details childDetail = detailsDataSource.getChildDetailFromId(jsonObject.getString("_id"));
+                        if (childDetail != null) {
+                            BeaconTrackingService.postNotification(childDetail, c);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
             } else {
                 JSONObject value = jsonObject.getJSONObject("value");
@@ -133,6 +142,15 @@ public class BeaconTrackingService extends Service {
 
                  //   notificationsDataSource.createNotification(value.getString("_id"),
                   //          value.getString("name"));
+                } else {
+                    try {
+                        Details childDetail = detailsDataSource.getChildDetailFromId(jsonObject.getString("id"));
+                        if (childDetail != null) {
+                            BeaconTrackingService.postNotification(childDetail, c);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         } catch (Exception ex) {
