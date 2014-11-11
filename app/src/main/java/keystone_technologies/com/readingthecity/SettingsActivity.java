@@ -16,28 +16,28 @@ import java.util.List;
 
 public class SettingsActivity extends ListActivity {
 
-    private static DetailsDataSource detailsDataSource;
+    private static NotificationsDataSource notificationsDataSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        detailsDataSource = new DetailsDataSource(this);
-        List<Details> detailsList = detailsDataSource.getAllDetails();
+        notificationsDataSource = new NotificationsDataSource(this);
+        List<Posts> notificationList = notificationsDataSource.getAllPosts();
 
-        DetailAdapter adapter = new DetailAdapter(getBaseContext(), R.layout.detail_cell, detailsList);
+        PostsAdapter adapter = new PostsAdapter(getBaseContext(), R.layout.detail_cell, notificationList);
         setListAdapter(adapter);
         adapter.notifyDataSetChanged();
     }
     // beacon adapter for array list
-    public static class DetailAdapter extends ArrayAdapter<Details> {
+    public static class PostsAdapter extends ArrayAdapter<Posts> {
 
         // list of items
-        private static List<Details> items;
+        private static List<Posts> items;
         private Context context;
 
-        public DetailAdapter(Context context, int textViewResourceId, List<Details> i) {
+        public PostsAdapter(Context context, int textViewResourceId, List<Posts> i) {
             super(context, textViewResourceId, i);
             items = i;
             this.context = context;
@@ -54,37 +54,26 @@ public class SettingsActivity extends ListActivity {
             Switch s = (Switch) v.findViewById(R.id.detailName);
 
             if (s != null) {
-                try {
-                    JSONObject jsonObject = new JSONObject(items.get(position).getDetail());
-                    if (jsonObject.isNull("value")) {
-                        s.setText(jsonObject.getString("name"));
-                    } else {
-                        JSONObject value = jsonObject.getJSONObject("value");
-                        s.setText(value.getString("name"));
-                    }
-
-                  //  s.setChecked(items.get(position).getResponse() != 0);
+                s.setText(items.get(position).getName());
+                s.setChecked(items.get(position).getResponse() != 0);
                     s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                         @Override
                         public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                             if(isChecked) {
                                 for (int i = 0; i < items.size(); i++) {
-                                    if (items.get(i).getDetail().contains(compoundButton.getText().toString())) {
-                                      //  detailsDataSource.setYesResponse(items.get(i).getId());
+                                    if (items.get(i).getName().contains(compoundButton.getText().toString())) {
+                                        notificationsDataSource.setYesResponse(items.get(i).getId());
                                    }
                                 }
                             } else {
                                 for (int i = 0; i < items.size(); i++) {
-                                    if (items.get(i).getDetail().contains(compoundButton.getText().toString())) {
-                                     //   detailsDataSource.setNoResponse(items.get(i).getId());
+                                    if (items.get(i).getName().contains(compoundButton.getText().toString())) {
+                                        notificationsDataSource.setNoResponse(items.get(i).getId());
                                     }
                                 }
                             }
                         }
                     });
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
             }
             return v;
         }

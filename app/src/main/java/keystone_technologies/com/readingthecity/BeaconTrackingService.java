@@ -29,6 +29,7 @@ public class BeaconTrackingService extends Service {
     private static BeaconManager beaconManager;
     private BeaconDataSource beaconDataSource;
     private static DetailsDataSource detailsDataSource;
+    private static NotificationsDataSource notificationsDataSource;
     private Context context;
 
     @Override
@@ -43,6 +44,7 @@ public class BeaconTrackingService extends Service {
         context = this;
         beaconDataSource = new BeaconDataSource(this);
         detailsDataSource = new DetailsDataSource(this);
+        notificationsDataSource = new NotificationsDataSource(this);
 
         beaconManager = new BeaconManager(this);
 
@@ -60,7 +62,7 @@ public class BeaconTrackingService extends Service {
         try {
             JSONObject jsonObject = new JSONObject(detail.getDetail());
             if (jsonObject.isNull("value")) {
-                if (!detailsDataSource.isDetailInDB(jsonObject.getString("_id"))) {
+                if (!notificationsDataSource.isPostInDB(jsonObject.getString("_id"))) {
                     NotificationManager notificationManager = (NotificationManager) c.getSystemService(NOTIFICATION_SERVICE);
                     /** set a custom layout to the notification in notification drawer  */
                     RemoteViews notificationView = new RemoteViews(c.getPackageName(), R.layout.beacon_notification_layout);
@@ -68,8 +70,7 @@ public class BeaconTrackingService extends Service {
                     notificationView.setTextViewText(R.id.detailDescription, jsonObject.getString("description"));
 
                     infoIntent.putExtra("url", jsonObject.getString("url"));
-
-
+                    infoIntent.putExtra("name", jsonObject.getString("name"));
 
                     Intent yesIntent = new Intent(c, NotificationButtonListener.class);
                     yesIntent.setAction("Yes");
@@ -92,10 +93,13 @@ public class BeaconTrackingService extends Service {
 
                     notificationBeacon.contentView = notificationView;
                     notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
+
+                   // notificationsDataSource.createNotification(jsonObject.getString("_id"),
+                    //        jsonObject.getString("name"));
                 }
             } else {
                 JSONObject value = jsonObject.getJSONObject("value");
-                if (!detailsDataSource.isDetailInDB(value.getString("_id"))) {
+                if (!notificationsDataSource.isPostInDB(value.getString("_id"))) {
                     NotificationManager notificationManager = (NotificationManager) c.getSystemService(NOTIFICATION_SERVICE);
                     /** set a custom layout to the notification in notification drawer  */
                     RemoteViews notificationView = new RemoteViews(c.getPackageName(), R.layout.beacon_notification_layout);
@@ -104,8 +108,8 @@ public class BeaconTrackingService extends Service {
                     notificationView.setTextViewText(R.id.detailDescription, value.getString("description"));
                     // Intent infoIntent = new Intent(c, BeaconInfoActivity.class);
                     infoIntent.putExtra("url", value.getString("url"));
+                    infoIntent.putExtra("name", value.getString("name"));
                     //  PendingIntent pendingIntent = PendingIntent.getActivity(c, 0, infoIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
 
                     Intent yesIntent = new Intent(c, NotificationButtonListener.class);
                     yesIntent.setAction("Yes");
@@ -126,6 +130,9 @@ public class BeaconTrackingService extends Service {
 
                     notificationBeacon.contentView = notificationView;
                     notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
+
+                 //   notificationsDataSource.createNotification(value.getString("_id"),
+                  //          value.getString("name"));
                 }
             }
         } catch (Exception ex) {
