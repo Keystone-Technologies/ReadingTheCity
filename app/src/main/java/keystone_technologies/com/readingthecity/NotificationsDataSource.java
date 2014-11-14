@@ -59,27 +59,17 @@ public class NotificationsDataSource {
         return post;
     }
 
-//    public int getBeaconResponse(String id) {
-//        open();
-//
-//        int response = 0;
-//
-//        String[] result_column = new String[] {ServiceTable.COLUMN_ID, ServiceTable.COLUMN_RESPONSE};
-//        String where = ServiceTable.COLUMN_ID + "=" + id;
-//
-//        String whereArgs[] = null;
-//        String groupBy = null;
-//        String having = null;
-//        String order = null;
-//
-//        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, result_column, where, whereArgs, groupBy, having, order);
-//        int RESPONSE_INDEX = cursor.getColumnIndexOrThrow(ServiceTable.COLUMN_RESPONSE);
-//        while (cursor.moveToNext()) {
-//            response = cursor.getInt(RESPONSE_INDEX);
-//        }
-//        cursor.close();
-//        return response;
-//    }
+    public int getNotificationResponse(String id) {
+        int response = 99;
+        List<Posts> postList = getAllPosts();
+
+        for (Posts p : postList) {
+            if (id.equals(p.getId())) {
+                response = p.getResponse();
+            }
+        }
+        return response;
+    }
 
     public void setYesResponse(String id) {
         open();

@@ -81,12 +81,12 @@ public class GetBeaconDetails extends AsyncTask<Void, Void, String> implements S
                     }
 
                     new GetBeaconDetails(value.getString("parent")).execute();
-                    detailsDataSource.createDetail(value.toString(), new Date().toString(), value.getString("_id"));
+                    detailsDataSource.createDetail(value.getString("_id"), value.toString());
                 } else {
                     if (detailsDataSource.isDetailInDB(value.getString("_id"))) {
                         detailsDataSource.deleteDetail(value.getString("_id"));
                     }
-                    detailsDataSource.createDetail(value.toString(), new Date().toString(), value.getString("_id"));
+                    detailsDataSource.createDetail(value.getString("_id"), value.toString());
                     BeaconTrackingService.postNotification(new Details(row.toString()), context);
                 }
             }

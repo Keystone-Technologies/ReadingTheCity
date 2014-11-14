@@ -32,13 +32,13 @@ public class BeaconDataSource {
         dbBeaconTable.close();
     }
 
-    public void createBeacon(int major, int minor, String date, String id) {
+    public void createBeacon(int major, int minor, String date) {
         open();
         ContentValues values = new ContentValues();
         values.put(BeaconTable.COLUMN_MAJOR, major);
         values.put(BeaconTable.COLUMN_MINOR, minor);
         values.put(BeaconTable.COLUMN_DATE, date);
-        values.put(BeaconTable.COLUMN_ID, id);
+        //values.put(BeaconTable.COLUMN_ID, id);
 
         database.insert(BeaconTable.TABLE_BEACON, null, values);
         close();
@@ -62,14 +62,14 @@ public class BeaconDataSource {
 //    }
 
 
-    public boolean isBeaconInDB(Beacon beacon) {
+    public boolean isBeaconNotInDB(Beacon beacon) {
         List<Device> beaconList = getAllBeacons();
-        boolean flag = false;
+        boolean flag = true;
 
         for (Device b : beaconList) {
             if (b.getMajor() == beacon.getMajor()) {
                 if (b.getMinor() == beacon.getMinor()) {
-                    flag = true;
+                    flag = false;
                     break;
                 }
             }
@@ -79,8 +79,8 @@ public class BeaconDataSource {
 
     public void deleteBeacon(Beacon beacon) {
         open();
-        int minor = beacon.getMinor();
-        database.delete(BeaconTable.TABLE_BEACON, BeaconTable.COLUMN_MINOR + "=" + minor, null);
+        database.delete(BeaconTable.TABLE_BEACON, BeaconTable.COLUMN_MAJOR + "=" + beacon.getMajor() +
+                BeaconTable.COLUMN_MINOR + "=" + beacon.getMinor(), null);
         close();
     }
 

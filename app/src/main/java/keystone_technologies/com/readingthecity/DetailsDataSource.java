@@ -21,7 +21,7 @@ public class DetailsDataSource {
 
     private SQLiteDatabase database;
     private DetailsTable dbDetailsTable;
-    private String[] allColumns = { DetailsTable.COLUMN_DETAILS};
+    private String[] allColumns = { DetailsTable.COLUMN_ID, DetailsTable.COLUMN_DETAILS};
 
     public DetailsDataSource(Context context) {
         dbDetailsTable = new DetailsTable(context);
@@ -35,9 +35,10 @@ public class DetailsDataSource {
         dbDetailsTable.close();
     }
 
-    public void createDetail(String detail, String date, String id) {
+    public void createDetail(String id, String detail) {
         open();
         ContentValues values = new ContentValues();
+        values.put(DetailsTable.COLUMN_ID, id);
         values.put(DetailsTable.COLUMN_DETAILS, detail);
 
         database.insert(DetailsTable.TABLE_DETAILS, null, values);
@@ -68,11 +69,21 @@ public class DetailsDataSource {
         try {
             for (Details d : detailsList) {
                 JSONObject jsonObject = new JSONObject(d.getDetail());
-               // JSONObject value = jsonObject.getJSONObject("value");
-                if (id.equals(jsonObject.getString("parent"))) {
-                    detail = d;
-                    break;
+                //if (jsonObject.isNull("value")) {
+                if (!jsonObject.isNull("parent")) {
+                    if (id.equals(jsonObject.getString("parent"))) {
+                        detail = d;
+                       // break;
+                    }
                 }
+
+               // } else {
+               //     JSONObject value = jsonObject.getJSONObject("value");
+               //     if (id.equals(value.getString("parent"))) {
+               //         detail = d;
+               //         break;
+                //    }
+              //  }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -153,19 +164,20 @@ public class DetailsDataSource {
 
         for (Details d : detailsList) {
             try {
-                JSONObject jsonObject = new JSONObject(d.getDetail());
-                if (jsonObject.isNull("value")) {
-                    if (id.equals(jsonObject.getString("_id"))) {
-                        flag = true;
-                        break;
-                    }
-                } else {
-                    JSONObject value = jsonObject.getJSONObject("value");
-                    if (id.equals(value.getString("_id"))) {
-                        flag = true;
-                        break;
-                    }
+               // JSONObject jsonObject = new JSONObject(d.getDetail());
+                //if (jsonObject.isNull("value")) {
+                 //   if (id.equals(jsonObject.getString("_id"))) {
+                if (id.equals(d.getId())) {
+                    flag = true;
+                    break;
                 }
+//                } else {
+//                    JSONObject value = jsonObject.getJSONObject("value");
+//                    if (id.equals(value.getString("_id"))) {
+//                        flag = true;
+//                        break;
+//                    }
+//                }
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -174,9 +186,9 @@ public class DetailsDataSource {
         return flag;
     }
 
-    public void deleteDetail(String detail) {
+    public void deleteDetail(String id) {
         open();
-        database.delete(DetailsTable.TABLE_DETAILS, DetailsTable.COLUMN_DETAILS + "='" + detail + "'", null);
+        database.delete(DetailsTable.TABLE_DETAILS, DetailsTable.COLUMN_ID + "='" + id + "'", null);
         close();
     }
 
@@ -200,7 +212,8 @@ public class DetailsDataSource {
 
     private Details cursorToBeacon(Cursor cursor) {
         Details detail = new Details();
-        detail.setDetail(cursor.getString(0));
+        detail.setId(cursor.getString(0));
+        detail.setDetail(cursor.getString(1));
         return detail;
     }
 }

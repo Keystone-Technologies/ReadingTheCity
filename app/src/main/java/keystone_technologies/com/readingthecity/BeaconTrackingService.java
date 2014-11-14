@@ -75,6 +75,7 @@ public class BeaconTrackingService extends Service {
                     Intent yesIntent = new Intent(c, NotificationButtonListener.class);
                     yesIntent.setAction("Yes");
                     yesIntent.putExtra("id", jsonObject.getString("_id"));
+                    yesIntent.putExtra("name", jsonObject.getString("name"));
 
                     PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                     notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
@@ -82,6 +83,8 @@ public class BeaconTrackingService extends Service {
                     Intent noIntent = new Intent(c, NotificationButtonListener.class);
                     noIntent.setAction("No");
                     noIntent.putExtra("id", jsonObject.getString("_id"));
+                    noIntent.putExtra("name", jsonObject.getString("name"));
+
                     PendingIntent pendingNoIntent = PendingIntent.getBroadcast(c, 0, noIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                     notificationView.setOnClickPendingIntent(R.id.btnNo, pendingNoIntent);
 
@@ -93,14 +96,13 @@ public class BeaconTrackingService extends Service {
 
                     notificationBeacon.contentView = notificationView;
                     notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
-
-                   // notificationsDataSource.createNotification(jsonObject.getString("_id"),
-                    //        jsonObject.getString("name"));
                 } else {
                     try {
-                        Details childDetail = detailsDataSource.getChildDetailFromId(jsonObject.getString("_id"));
-                        if (childDetail != null) {
-                            BeaconTrackingService.postNotification(childDetail, c);
+                        if (notificationsDataSource.getNotificationResponse(jsonObject.getString("_id")) != 0) {
+                            Details childDetail = detailsDataSource.getChildDetailFromId(jsonObject.getString("_id"));
+                            if (childDetail != null) {
+                                BeaconTrackingService.postNotification(childDetail, c);
+                            }
                         }
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -123,6 +125,7 @@ public class BeaconTrackingService extends Service {
                     Intent yesIntent = new Intent(c, NotificationButtonListener.class);
                     yesIntent.setAction("Yes");
                     yesIntent.putExtra("id", value.getString("_id"));
+                    yesIntent.putExtra("name", value.getString("name"));
 
                     PendingIntent pendingYesIntent = PendingIntent.getBroadcast(c, 0, yesIntent, PendingIntent.FLAG_UPDATE_CURRENT);
                     notificationView.setOnClickPendingIntent(R.id.btnYes, pendingYesIntent);
@@ -130,6 +133,7 @@ public class BeaconTrackingService extends Service {
                     Intent noIntent = new Intent(c, NotificationButtonListener.class);
                     noIntent.setAction("No");
                     noIntent.putExtra("id", value.getString("_id"));
+                    noIntent.putExtra("name", value.getString("name"));
 
                     Notification notificationBeacon = new Notification.Builder(c)
                             .setSmallIcon(R.drawable.beacon_gray)
@@ -139,14 +143,13 @@ public class BeaconTrackingService extends Service {
 
                     notificationBeacon.contentView = notificationView;
                     notificationManager.notify(Constants.BEACON_NOTIFICATION_ID, notificationBeacon);
-
-                 //   notificationsDataSource.createNotification(value.getString("_id"),
-                  //          value.getString("name"));
                 } else {
                     try {
-                        Details childDetail = detailsDataSource.getChildDetailFromId(jsonObject.getString("id"));
-                        if (childDetail != null) {
-                            BeaconTrackingService.postNotification(childDetail, c);
+                        if (notificationsDataSource.getNotificationResponse(value.getString("_id")) != 0) {
+                            Details childDetail = detailsDataSource.getChildDetailFromId(value.getString("_id"));
+                            if (childDetail != null) {
+                                BeaconTrackingService.postNotification(childDetail, c);
+                            }
                         }
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -195,11 +198,15 @@ public class BeaconTrackingService extends Service {
                         if (!beacons.isEmpty()) {
                             if (beacons.size() > 1) {
                                 if (beacons.get(0).getRssi() - beacons.get(1).getRssi() >= 5) {
-                                    if (!beaconDataSource.isBeaconInDB(beacons.get(0))) {
+                                    if (beaconDataSource.isBeaconNotInDB(beacons.get(0))) {
+                                         beaconDataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
+                                              new Date().toString());
                                         new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                     } else {
                                         if (isBeaconOld(beacons.get(0))) {
                                             beaconDataSource.deleteBeacon(beacons.get(0));
+                                            beaconDataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
+                                                    new Date().toString());
                                             new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                         } else {
                                             // get beacon from DB
@@ -220,11 +227,15 @@ public class BeaconTrackingService extends Service {
                                     }
                                 }
                             } else {
-                                if (!beaconDataSource.isBeaconInDB(beacons.get(0))) {
+                                if (beaconDataSource.isBeaconNotInDB(beacons.get(0))) {
+                                    beaconDataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
+                                            new Date().toString());
                                     new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                 } else {
                                     if (isBeaconOld(beacons.get(0))) {
                                         beaconDataSource.deleteBeacon(beacons.get(0));
+                                        beaconDataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
+                                                new Date().toString());
                                         new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                     } else {
                                         // get beacon from DB
