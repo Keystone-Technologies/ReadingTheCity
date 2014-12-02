@@ -1,0 +1,226 @@
+package Android;
+use Mojo::Base -base;
+use Mojo::JSON 'j';
+
+has 'app';
+
+sub notification { j(shift->app->redis->get('notification')) || {} }
+
+sub notify {
+  my ($self, $major, $minor, $rssi, $json) = @_;
+  $self->app->redis->set(notification => j({major => $major, minor => $minor, id => $major.$minor, rssi => $rssi, json => $json}));
+  return int(rand(10)) == 1 ? 0 : 1;  # Randomly fail on posting to notification bar
+}
+
+sub estimotes {
+  my $self = shift;
+  if ( @_ ) {
+    my ($major, $minor, $rssi) = @_;
+    if ( defined $rssi ) {
+      $self->app->redis->hset(beacons => "${major}_$minor" => $rssi);
+      $self->app->log->debug("{major => $major, minor => $minor, rssi => $rssi}");
+      return {major => $major, minor => $minor, rssi => $rssi};
+    } else {
+      #$self->app->redis->hdel(beacons => "${major}_$minor");
+      return {major => $major, minor => $minor, rssi => $self->app->redis->hget(beacons => "${major}_$minor")};
+    }
+  } else {
+    my @estimotes = ();
+    foreach ( @{$self->app->redis->hkeys('beacons')} ) {
+      my ($major, $minor) = split /_/, $_;
+      push @estimotes, {major => $major, minor => $minor, rssi => $self->app->redis->hget(beacons => $_)};
+    }
+    return @estimotes;
+  }
+}
+
+sub reset {
+  my $self = shift;
+  $self->app->redis->del('notification');
+  $self->app->redis->del('beacons');
+}
+
+package main;
+use Mojolicious::Lite;
+use Mojo::Cache;
+use Mojo::JSON 'j';
+use Mojo::Redis2;
+use DBI;
+use Data::Dumper;
+no warnings;
+
+helper db => sub { DBI->connect("dbi:SQLite:dbname=sql.db","","",{AutoCommit=>1}) };
+helper redis => sub { Mojo::Redis2->new };
+helper android => sub { Android->new(app => app) };
+
+get '/' => sub {
+  my $c = shift;
+  $c->render('index');
+};
+
+#get '/notification' => sub {
+#  my $c = shift;
+#  $c->render(n => $c->android->notification, beacons => $c->android->estimotes);
+#};
+
+websocket '/notification' => sub {
+  my $c = shift;
+  $c->on(frame => sub {
+    my ($tx, $frame) = @_;
+    Mojo::IOLoop->recurring(1 => sub {
+      $tx->send({json => $c->android->notification});
+    });
+  });
+};
+
+post '/beacon/:beacon/:rssi' => {rssi => undef} => sub {
+  my $c = shift;
+  my (undef, $major, $minor) = ($c->param('beacon') =~ /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-(\d+)-(\d+)$/);
+  $c->render(json => $c->android->estimotes($major, $minor, $c->param('rssi')));
+};
+
+#del '/beacon/:beacon' => sub {
+#  my $c = shift;
+#  my (undef, $major, $minor) = (/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-(\d+)-(\d+)$/);
+#  $c->android->estimotes($major, $minor);
+#  $c->render(text => sprintf "%s%s => X", $major, $minor);
+#};
+
+post '/show/:uuid/:show' => [show => [0,1,undef]] => {show => undef} => sub {
+  my $c = shift;
+  my $sth = $c->app->db->prepare("update details set age=strftime('%s', 'now'),show=? where uuid = ?");
+  $sth->execute($c->param('show'), $c->param('uuid'));
+  $sth->finish;
+  $c->app->redis->del('notification');
+  $c->render(text => $c->param('uuid') . ' => ' . ($c->param('show')?'Yes':'No'));
+};
+
+del '/reset' => sub {
+  my $c = shift;
+  $c->app->android->reset;
+  $c->db->do("delete from details");
+  $c->db->do("delete from beacons");
+  $c->render(text => 'Reset');
+};
+
+warn Dumper([app->android->estimotes]);
+app->redis->del('notification');
+Mojo::IOLoop->recurring(0.25 => sub {
+  my $beacon = app->android->notification;
+  #warn Dumper($beacon);
+  warn keys %$beacon ? sprintf("Notification: %s => %s (%s|%s): %s\n", $beacon->{id}, $beacon->{json}->{name}, $beacon->{json}->{_id}, $beacon->{json}->{parent}, ($beacon->{json}->{child}?'':$beacon->{json}->{url}->[0])) : "No notification\n";
+  my @beacons = sort { $a->{rssi} <=> $b->{rssi} } app->android->estimotes;
+  if ( defined $beacon && grep { $_ == $beacon->{id} } strong_beacons(@beacons) ) {
+    #warn "No change\n";
+    return
+  } else {
+    foreach ( @beacons ) {
+      if ( post_notification($_) ) {
+        warn "Posted!\n";
+        last;
+      } else {
+        #warn "Not Posted!\n";
+      }
+    }
+  }
+});
+
+app->start;
+
+sub strong_beacons {
+  my @beacons = @_;
+  my @strong = ();
+  foreach ( 0..$#beacons ) {
+    if ( $beacons[$_]->{rssi} <= $beacons[0]->{rssi} + 5 ) {
+      push @strong, $beacons[$_];
+    } else {
+      last;
+    }
+  }
+  return map { $_->{major}.$_->{minor} } @strong;
+}
+
+sub post_notification {
+  my $beacon = shift;
+  app->android->notify($beacon->{major}, $beacon->{minor}, $beacon->{rssi}, async_details(async_beacon($beacon))) ? 1 : undef;
+}
+
+# sqlite> create table beacons (major integer, minor integer, fetching integer, age integer, parent text);
+sub async_beacon {
+  my $beacon = shift;
+  my $sth = app->db->prepare("select fetching,age,parent from beacons where major = ? and minor = ? limit 1");
+  $sth->execute($beacon->{major}, $beacon->{minor});
+  my ($fetching, $age, $parent) = $sth->fetchrow_array;
+  my $rows = $sth->rows;
+  $sth->finish;
+  if ( $rows == 0 ) {
+    my $sth = app->db->prepare("insert into beacons (major, minor) values (?, ?)");
+    $sth->execute($beacon->{major}, $beacon->{minor});
+    $sth->finish;
+  }
+  if ( defined $fetching && time() - $fetching < 7 ) {
+    return $parent;
+  }
+  if ( (not defined $parent) || ($age && time() - $age > 86400) ) {
+    my $sth = app->db->prepare("update beacons set fetching = strftime('%s', 'now') where major = ? and minor = ?");
+    $sth->execute($beacon->{major}, $beacon->{minor});
+    $sth->finish;
+    app->ua->get("http://couchdb.dev.kit.cm/rtc/_design/lookup/_view/beacon?key=[$beacon->{major},$beacon->{minor}]" => sub {
+      my ($ua, $tx) = @_;
+      my $json = $tx->res->json;
+      $sth = app->db->prepare("update beacons set fetching=null,age=strftime('%s', 'now'),parent=? where major = ? and minor = ?");
+      $sth->execute($json->{rows}->[0]->{value}->{parent}, $beacon->{major}, $beacon->{minor});
+      $sth->finish;
+    });
+  }
+  return [undef, $parent];
+}
+
+# sqlite> create table details (uuid text, fetching integer, age integer, parent text, json text, show integer);
+sub async_details {
+  return undef unless defined $_[0] && ref $_[0];
+  return $_[0] if ref $_[0] eq 'HASH';
+  my ($cuuid, $uuid) = @{$_[0]} if ref $_[0] eq 'ARRAY';
+  return undef unless $uuid;
+  my $sth = app->db->prepare("select d0.uuid as cuuid,d1.fetching as fetching,d1.age as age,d1.parent as parent,d1.json as json,d1.show as show,d2.json as pjson,d2.show as pshow from details d1 left join details d2 on d1.parent=d2.uuid left join details d0 on d0.parent=d1.uuid where d1.uuid = ? limit 1");
+  $sth->execute($uuid);
+  my ($child, $fetching, $age, $parent, $json, $show, $pjson, $pshow) = $sth->fetchrow_array;
+  my $rows = $sth->rows;
+  $sth->finish;
+  if ( $rows == 0 ) {
+    my $sth = app->db->prepare("insert into details (uuid) values (?)");
+    $sth->execute($uuid);
+    $sth->finish;
+  }
+  if ( (defined $show && $show == 0) || (defined $pshow && $pshow == 0) ) {
+    return undef;
+  }
+  if ( defined $fetching && time() - $fetching < 7 ) {
+    return j($json);
+  }
+  warn sprintf "Checking details for %s | %s %s %s | %s %s %s\n", $cuuid, $uuid, j($json||'{}')->{name}, $show, $parent, j($pjson||'{}')->{name}, $pshow;
+  if ( defined $parent && not defined $pshow ) {
+    return async_details([$uuid, $parent]);
+  }
+  if ( (not defined $json) || ($age && time() - $age > 86400) ) {
+    my $sth = app->db->prepare("update details set fetching = strftime('%s', 'now') where uuid = ?");
+    $sth->execute($uuid);
+    $sth->finish;
+    app->ua->get("http://couchdb.dev.kit.cm/rtc/_design/lookup/_view/details?key=\"$uuid\"" => sub {
+      my ($ua, $tx) = @_;
+      my $json = $tx->res->json->{rows}->[0]->{value};
+      $json->{child} = $cuuid;
+      $sth = app->db->prepare("update details set fetching=null,age=strftime('%s', 'now'),parent=?,json=?,show=null where uuid = ?");
+      $sth->execute($json->{parent}, j($json), $uuid);
+      $sth->finish;
+    });
+  }
+  return j($json);
+}
+
+__DATA__
+
+@@ notification.html.ep
+% if ( $n->{json} ) {
+  <a href="<%= $n->{json}->{url}->[0] %>"><%= $n->{json}->{name} %></a>
+% }

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Reading the City</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/normalize.css" type="text/css" media="screen"/>
+        <link rel="stylesheet" href="css/style.css" type="text/css" media="screen"/>
+        <link rel="stylesheet" href="css/slider.css">
+        <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+        <script src="http://code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+        <script src="js/checkbox.js"></script>
+        <style>
+             .hide { color:gray }
+        </style>
+        <script>
+            $(function(){
+                var uuid;
+                var ws = new WebSocket('<%= url_for('notification')->to_abs %>');
+                ws.onmessage = function (event) {
+                  var json = JSON.parse(event.data);
+                  if ( json == null || json.json == null ) {
+                    uuid = null;
+                    $('div#NotificationBar > div#thumbnail').html('');
+                    $('div#NotificationBar > div#name').html('');
+                    $('div#NotificationBar > div#description').html('');
+                    $('div#NotificationBar > div#url').html('');
+                    return;
+                  }
+                  uuid = json.json._id;
+                  $('div#NotificationBar > div#thumbnail').html(json.json.thumbnail);
+                  $('div#NotificationBar > div#name').html(json.json.name);
+                  $('div#NotificationBar > div#description').html(json.json.description);
+                  $('div#NotificationBar > div#url').html(json.json.url[0]);
+                  if ( json.json.child == null )
+                    $('div#NotificationBar > div#show').hide();
+                  else
+                    $('div#NotificationBar > div#show').show();
+                };
+                ws.onopen = function (event) {
+                  ws.send(1);
+                };
+                $('div#NotificationBar > div#show > div#yes').click(function(){
+                  if ( uuid )
+                    $.post("/show/"+uuid+"/1");
+                });
+                $('div#NotificationBar > div#show > div#no').click(function(){
+                  if ( uuid )
+                    $.post("/show/"+uuid+"/0");
+                });
+                $(".checkbox").each(function(){
+                    $(this).change(function(){
+                        //console.log("Check val: "+$(this).is(':checked'));
+                        var beacon = $(this).parent().parent().find(".FloatLeft > span").first();
+                        $(this).parent().parent().toggleClass("hide");
+                        if ( $(this).parent().parent().hasClass("hide") ) {
+                            $.post("/beacon/"+beacon.attr('id')+"/"+(ui.value*-1), function(data){
+                                // Anything to do here?  Probably not.
+                            });
+                            $(beacon).slider("disable");
+                        } else {
+                            $(beacon).slider("enable");
+                        }
+                    });
+                });
+                $(".Slider > .FloatLeft > span").each(function(){
+                    var beacon = $(this);
+                    //console.log("Setting up slider " + beacon.attr('id'));
+                    var value = parseInt( $( this ).text(), 10 );
+                    $.post("/beacon/"+beacon.attr('id'), function(data){
+                      $(beacon).parent().parent().find("span.major").first().html(data.major);
+                      $(beacon).parent().parent().find("span.minor").first().html(data.minor);
+                      $(beacon).parent().parent().find("span.rssi").first().html(data.rssi);
+                      $(beacon).slider("value", -1*data.rssi);
+                    });
+                    $(this).empty().slider({
+                        value: value,
+                        range: "min",
+                        animate: true,
+                        orientation: "vertical",
+                        stop: function (e, ui) {
+                            if ( $(beacon).parent().parent().find("input[type=checkbox]").first().is(':checked') == false ) {
+                                $.post("/beacon/"+beacon.attr('id')+"/"+(ui.value*-1), function(data){
+                                    //console.log(data.rssi);
+                                    $(beacon).parent().parent().find("span.rssi").first().html(data.rssi);
+                                    return;
+                                    //$("#console").append("<p>> <a href='" + data.url.default + "'>" + data.name + " - " + data.proximity + "</a></p>");
+                                    $(beacon).parent().parent().find("span.name").first().html(data.label + " : " + data.name);
+                                    $(beacon).parent().parent().find("span.major").first().html(data.major);
+                                    $(beacon).parent().parent().find("span.minor").first().html(data.minor);
+                                    if ( !!data.url )
+                                    $(beacon).parent().parent().find("span.url").first().html("<a href='" + data.url.default + "'>"+ data.url.default + "</a>");
+                                    else
+                                    $(beacon).parent().parent().find("span.url").first().html("");
+                                    $(beacon).parent().parent().find("span.status").first().html(data.status);
+                                    $(beacon).parent().parent().find("span.proximity").first().html(data.proximity);
+                                    $(beacon).parent().parent().find("span.hidden").first().html(data.hidden);
+                                });
+                            }
+                        }
+                    });
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div id="Wrapper">
+            <div id="Header">
+                <div id="Account">
+                    <h2><span></span></h2>
+                </div>
+            </div><!-- End Header -->
+            <!--<div id="Output">
+                <div id="logo">
+                    <img src="img/logo.png" class="resize" alt="Logo Goes Here."/>
+                </div>
+                <div id="ConsoleWrapper">
+                    <h1>Console Output:</h1>
+                    <div id="console"><p>&#62;&nbsp;Major:<span class="console.major"></span>&nbsp;Minor:<span class="console.minor"></span>&nbsp;&#45;&nbsp;Signal Strength:<span class="console.signal"></span>
+                    </div>
+                </div>
+                <div id="clear"></div>
+            </div> -->
+            <a href="<%= url_for 'help' %>">Help</a>
+            <div id="NotificationBar">
+              Notification Bar
+              <div id="thumbnail"></div>
+              <div id="id"></div>
+              <div id="name"></div>
+              <div id="description"></div>
+              <div id="url"></div>
+              <div id="show">
+              <div id="yes">Yes</div><div id="no">No</div>
+              </div>
+            </div>
+            <div id="Input">
+                <div class="Slider"><!-- Start Slider 1 -->
+                     <div class="FloatLeft">
+                        <span id="b9407f30-f5f8-466e-aff9-25556b57fe6d-19665-6283">65</span>
+                     </div>
+                     <div class="FloatRight">
+                         <p><span class="name">Michaelangelo's Sistine Chapel</span></p>
+                         <p>Major ID: <span class="major"></span><br/>Minor ID: <span class="minor"></span></p>
+                         <p>Signal Strength: <span class="rssi"></span> db</p>
+                     </div>
+                </div><!-- End Slider 1 -->
+                <div class="Slider"><!-- Start Slider 2 -->
+                     <div class="FloatLeft">
+                        <span id="b9407f30-f5f8-466e-aff9-25556b57fe6d-6033-57725">90</span>
+                     </div>
+                     <div class="FloatRight">
+                         <p><span class="name">Michaelangelo's David</span></p>
+                         <p>Major ID: <span class="major"></span><br/>Minor ID: <span class="minor"></span></p>
+                         <p>Signal Strength: <span class="rssi"></span> db</p>
+                     </div>
+                </div><!-- End Slider 2 -->
+                <div class="Slider"><!-- Start Slider 3 -->
+                     <div class="FloatLeft">
+                         <span id="b9407f30-f5f8-466e-aff9-25556b57fe6d-14365-33884">0</span>
+                     </div>
+                     <div class="FloatRight">
+                         <p><span class="name">Leonardo da Vinci's Mona Lisa</span></p>
+                         <p>Major ID: <span class="major"></span><br/>Minor ID: <span class="minor"></span></p>
+                         <p>Signal Strength: <span class="rssi"></span> db</p>
+                     </div>
+                </div><!-- End Slider 3 -->
+                <div class="Slider"><!-- Start Slider 4 -->
+                     <div class="FloatLeft">
+                         <span id="b9407f30-f5f8-466e-aff9-25556b57fe6d-43891-24830">22</span>
+                     </div>
+                     <div class="FloatRight">
+                         <p><span class="name">Leonardo da Vinci's Last Supper</span></p>
+                         <p>Major ID: <span class="major"></span><br/>Minor ID: <span class="minor"></span></p>
+                         <p>Signal Strength: <span class="rssi"></span> db</p>
+                     </div>
+                </div><!-- End Slider 4 -->
+            </div><!-- End Input -->
+        </div><!-- End Wrapper -->
+    </body>
+</html>
