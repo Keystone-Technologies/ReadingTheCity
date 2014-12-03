@@ -86,7 +86,8 @@ post '/beacon/:beacon/:rssi' => {rssi => undef} => sub {
 #  $c->render(text => sprintf "%s%s => X", $major, $minor);
 #};
 
-post '/show/:uuid/:show' => [show => [0,1,undef]] => {show => undef} => sub {
+#post '/show/:uuid/:show' => [show => [(0,1,undef)]] => {show => undef} => sub {
+post '/show/:uuid/:show' => {show => undef} => sub {
   my $c = shift;
   my $sth = $c->app->db->prepare("update details set age=strftime('%s', 'now'),show=? where uuid = ?");
   $sth->execute($c->param('show'), $c->param('uuid'));
@@ -165,7 +166,7 @@ sub async_beacon {
     my $sth = app->db->prepare("update beacons set fetching = strftime('%s', 'now') where major = ? and minor = ?");
     $sth->execute($beacon->{major}, $beacon->{minor});
     $sth->finish;
-    app->ua->get("http://couchdb.dev.kit.cm/rtc/_design/lookup/_view/beacon?key=[$beacon->{major},$beacon->{minor}]" => sub {
+    app->ua->get("http://db.xlxcd1.kit.cm:5984/rtc/_design/lookup/_view/beacon?key=[$beacon->{major},$beacon->{minor}]" => sub {
       my ($ua, $tx) = @_;
       my $json = $tx->res->json;
       $sth = app->db->prepare("update beacons set fetching=null,age=strftime('%s', 'now'),parent=? where major = ? and minor = ?");
@@ -206,7 +207,7 @@ sub async_details {
     my $sth = app->db->prepare("update details set fetching = strftime('%s', 'now') where uuid = ?");
     $sth->execute($uuid);
     $sth->finish;
-    app->ua->get("http://couchdb.dev.kit.cm/rtc/_design/lookup/_view/details?key=\"$uuid\"" => sub {
+    app->ua->get("http://db.xlxcd1.kit.cm:5984/rtc/_design/lookup/_view/details?key=\"$uuid\"" => sub {
       my ($ua, $tx) = @_;
       my $json = $tx->res->json->{rows}->[0]->{value};
       $json->{child} = $cuuid;
