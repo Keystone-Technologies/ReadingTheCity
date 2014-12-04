@@ -31,10 +31,8 @@ sub beacon {
     $self->major(shift);
     $self->minor(shift);
     $self->rssi(shift) if $_[0];
-    return $self;
-  } else {
-    return $self->mmr;
   }
+  $self;
 }
 sub mmr { map { $_ => $_[0]->$_ } qw/major minor rssi/ }
 sub id { join '', map { $_[0]->$_ } qw/major minor/ }
@@ -69,12 +67,6 @@ sub notify {
 sub beacons { @{shift->app->redis->hkeys('beacons')} }
 sub estimotes { map { $_[0]->estimote(dekey($_)) } $_[0]->beacons }
 sub estimote { shift->beacon->new->beacon(shift, shift, shift) }
-
-sub reset {
-  my $self = shift;
-  $self->app->redis->del('notification');
-  $self->app->redis->del('beacons');
-}
 
 package RTC;
 use Mojo::Base -base;
@@ -143,6 +135,20 @@ sub async_details {
   j($json);
 }
 
+sub reset {
+  my $self = shift;
+  $self->app->redis->del('notification');
+  $self->app->redis->del('beacons');
+  $self->do("delete from details");
+  $self->do("delete from beacons");
+}
+
+sub show {
+  my $self = shift;
+  $self->do("update details set age=strftime('%s', 'now'),show=? where uuid = ?", undef, $c->param('show'), $c->param('uuid'));
+  $self->app->redis->del('notification');
+}
+
 package main;
 use Mojolicious::Lite;
 use Mojo::Cache;
@@ -167,7 +173,7 @@ websocket '/notification' => sub {
   $c->on(frame => sub {
     my ($tx, $frame) = @_;
     Mojo::IOLoop->recurring(1 => sub {
-      $tx->send({json => $c->details($c->android->notification)});
+      $tx->send({json => $c->rtc->details($c->android->notification)});
     });
   });
 };
@@ -184,18 +190,13 @@ post '/beacon/:beacon/:rssi' => {rssi => undef} => sub {
 #post '/show/:uuid/:show' => [show => [(0,1,undef)]] => {show => undef} => sub {
 post '/show/:uuid/:show' => {show => undef} => sub {
   my $c = shift;
-  my $sth = $c->app->db->prepare("update details set age=strftime('%s', 'now'),show=? where uuid = ?");
-  $sth->execute($c->param('show'), $c->param('uuid'));
-  $sth->finish;
-  $c->app->redis->del('notification');
+  $c->rtc->show($c->param('uuid') => $c->param('show'));
   $c->render(text => $c->param('uuid') . ' => ' . ($c->param('show')?'Yes':'No'));
 };
 
 del '/reset' => sub {
   my $c = shift;
-  $c->app->android->reset;
-  $c->db->do("delete from details");
-  $c->db->do("delete from beacons");
+  $c->rtc->reset;
   $c->render(text => 'Reset');
 };
 
