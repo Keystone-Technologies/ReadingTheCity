@@ -42,11 +42,11 @@
                 };
                 $('div#NotificationBar > div#show > div#yes').click(function(){
                   if ( uuid )
-                    $.post("/show/"+uuid+"/1");
+                    $.post("/response/"+uuid+"/1");
                 });
                 $('div#NotificationBar > div#show > div#no').click(function(){
                   if ( uuid )
-                    $.post("/show/"+uuid+"/0");
+                    $.post("/response/"+uuid+"/0");
                 });
                 $(".checkbox").each(function(){
                     $(this).change(function(){
