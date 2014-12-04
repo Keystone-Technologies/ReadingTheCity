@@ -96,6 +96,7 @@ sub selectrow_array {
 
 sub details {
   my ($self, $me, $child) = @_;
+Data::Dump::dump([$me, $child]);
   if ( $me ) {
     my ($rows, $_child, $fetching, $age, $parent, $json, $show, $pjson, $pshow) = $self->selectrow_array("select d0.uuid as cuuid,d1.fetching as fetching,d1.age as age,d1.parent as parent,d1.json as json,d1.show as show,d2.json as pjson,d2.show as pshow from details d1 left join details d2 on d1.parent=d2.uuid left join details d0 on d0.parent=d1.uuid where d1.uuid = ? limit 1", undef, $me);
     $self->do('insert into details (uuid) values (?)', undef, $me) unless $rows;
@@ -181,7 +182,7 @@ Mojo::IOLoop->recurring(0.25 => sub {
     return
   } else {
     foreach ( @beacons ) {
-      $_->dump;
+      #$_->dump;
       if ( app->android->notify($_->details) ) { # Notify using the selected JSON details
         warn "Posted!\n";
         last;
