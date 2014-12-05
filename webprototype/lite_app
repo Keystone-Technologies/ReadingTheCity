@@ -11,17 +11,19 @@ sub dekey { split /_/, shift }
 
 sub notification {
   my $self = shift;
-  my $json = $self->redis->get('android_notification') or do { warn "No notification\n"; return undef; };
-  $json = j($json); # {_id, rssi, major, minor, parent, name, description, url}
-  my $id = $json->{major}.$json->{minor};
-  warn sprintf("Notification: %s(%s) => %s (%s|%s|%s): %s\n", $id, $json->{rssi}, $json->{name}, $json->{child}, $json->{_id}, $json->{parent}, ($json->{child}?'':$json->{url}->[0]));
-  {id => $id, details => $json};
+  my $json = j($self->redis->get('android_notification')) or do { warn "No notification\n"; return {} };
+  no warnings;
+  warn sprintf("Notification: %s(%s) => %s (%s|%s|%s): %s\n", $json->{id}, $json->{rssi}, $json->{details}->{name}, $json->{details}->{child}, $json->{details}->{_id}, $json->{details}->{parent}, ($json->{details}->{child}?'':$json->{details}->{url}->[0]));
+  $json;
 }
 
 sub notify {
-  my ($self, $json) = (shift, shift);
-  return unless ref $json;
-  $self->redis->set(android_notification => j($json));
+  my ($self, $details) = (shift, shift);
+#  warn $self->notification->{id};
+#warn ref $details ? $details->{id} : $details if $details;
+  return unless ref $details;
+#warn "NOTIFY\n";
+  $self->redis->set(android_notification => j($details));
   return int(rand(10)) == 1 ? 0 : 1;  # Randomly fail on posting to notification bar
 }
 
@@ -32,7 +34,7 @@ sub estimotes {
 
 sub reset {
   my $self = shift;
-  $self->redis->del('notification');
+  $self->redis->del('android_notification');
   warn dump($_) foreach $self->estimotes;
 }
 
@@ -41,10 +43,43 @@ sub _rssi { shift->redis->hset(beacons => key(shift, shift) => shift) }
 ####################################################################
 package RTC;
 use Mojo::Base -base;
+
+has _beacons => sub { {} };
+
+sub beacon {
+  my ($self, %mmr) = @_;
+  my $key = join '', @mmr{major,minor} or return;
+  if ( $self->_beacons->{$key} ) {
+    $self->_beacons->{$key}->rssi($mmr{rssi});
+  } else {
+    $self->_beacons->{$key} = RTC::Beacon->new(@_);
+  }
+}
+ 
+sub beacons {
+  my $self = shift;
+  sort { $a->rssi <=> $b->rssi } grep { !$_->noshow } values %{$self->_beacons};
+}
+ 
+sub strong_beacons {
+  my @beacons = shift->beacons;
+  my @strong = ();
+  foreach ( 0..$#beacons ) {
+    if ( $beacons[$_]->rssi <= $beacons[0]->rssi + 5 ) {
+      push @strong, $beacons[$_];
+    } else {
+      last;
+    }
+  }
+  @strong;
+}
+
+package RTC::Beacon;
+use Mojo::Base -base;
 use Mojo::JSON 'j';
 use Mojo::Redis2;
 use Mojo::Log;
-use Mojo::UserAgent;
+use Mojo::UserAgent;	
 
 use DBI;
 use Data::Dump;
@@ -57,6 +92,7 @@ has redis => sub { Mojo::Redis2->new };
 
 has [qw/major minor rssi/];
 
+sub id { join '', map { $_[0]->$_ } qw/major minor/ }
 sub mm { map { $_[0]->$_ } qw/major minor/ }
 sub mmr { $_[0]->mm, $_[0]->rssi }
 sub dump { Data::Dump::dump({major => $_[0]->major, minor => $_[0]->minor, rssi => $_[0]->rssi}) }
@@ -79,7 +115,6 @@ sub create_tables {
 sub response {
   my ($self, $uuid, $show) = @_;
   $self->do("update details set age=strftime('%s', 'now'),show=? where uuid = ?", undef, $show, $uuid);
-  $self->redis->del('notification');
 }
 
 sub do { shift->db->do(@_) }
@@ -94,47 +129,59 @@ sub selectrow_array {
   $rows, @row;
 }
 
+sub json {
+  my ($self, $details) = @_;
+  return unless $details;
+  $details = {id => $self->id, rssi => $self->rssi, noshow => $self->noshow, details => j($details)};
+#  Data::Dump::dump($details);
+  $details;
+}
+
+has 'noshow';
 sub details {
   my ($self, $me, $child) = @_;
-Data::Dump::dump([$me, $child]);
   if ( $me ) {
     my ($rows, $_child, $fetching, $age, $parent, $json, $show, $pjson, $pshow) = $self->selectrow_array("select d0.uuid as cuuid,d1.fetching as fetching,d1.age as age,d1.parent as parent,d1.json as json,d1.show as show,d2.json as pjson,d2.show as pshow from details d1 left join details d2 on d1.parent=d2.uuid left join details d0 on d0.parent=d1.uuid where d1.uuid = ? limit 1", undef, $me);
     $self->do('insert into details (uuid) values (?)', undef, $me) unless $rows;
-    return if (defined $show && !$show) || (defined $pshow && !$pshow);
-    #return $self->update($parent, $me) unless defined $show || defined $pshow;
-    return if defined $fetching && time() - $fetching < 7;
-    if ( (defined $parent && not defined $pjson) || (not defined $age) || time() - $age > 86400 ) {
+
+    #return if defined $show;
+    #return $self->details($parent, $me) if $parent && defined $age && time() - $age < 86400 && not defined $pshow;
+    #return $self->json($json) if defined $fetching && time() - $fetching < 7;
+
+    return $self->noshow(1) if (defined $show && !$show) || (defined $pshow && !$pshow);
+    return $self->json($json) if defined $fetching && time() - $fetching < 7;
+    no warnings;
+    warn sprintf "Checking details for %s -> %s | %s %s %s | %s %s %s\n", $self->rssi, $_child, $me, j($json||'{}')->{name}, $show, $parent, j($pjson||'{}')->{name}, $pshow;
+    return $self->details($parent, $me) if defined $parent && not defined $pshow;
+    if ( (not defined $json) || ($age && time() - $age > 86400) ) {
+      warn "Fetching...\n";
       $self->do("update details set fetching = strftime('%s', 'now') where uuid = ?", undef, $me);
       $self->ua->get(sprintf('%s/rtc/_design/lookup/_view/details?key="%s"', $self->couchdb, $me) => sub {
         my ($ua, $tx) = @_;
         my $json = $tx->res->json->{rows}->[0]->{value};
         $json->{child} = $child;
         $self->do("update details set fetching=null,age=strftime('%s', 'now'),parent=?,json=?,show=null where uuid = ?", undef, $json->{parent}, j($json), $me);
-        $self->details($json->{parent}, $me) if defined $parent && (not defined $show || not defined $pshow);
       });
     }
-    return j($json) if $json && (!$parent || ($pshow && not defined $show));
+    return $self->json($json);
   } else {
-    my ($rows, $fetching, $age, $parent, $pjson, $pshow) = $self->selectrow_array('select b.fetching as fetching,b.age as age,b.parent as parent,d.json as json,d.show as show from beacons b left join details d on b.parent=d.uuid where major = ? and minor = ? limit 1', undef, $self->mm);
+    my ($rows, $fetching, $age, $parent) = $self->selectrow_array('select fetching,age,parent from beacons where major = ? and minor = ? limit 1', undef, $self->mm);
     $self->do('insert into beacons (major, minor) values (?, ?)', undef, $self->mm) unless $rows;
-    #return undef if defined $pshow && !$pshow;
-    return if defined $fetching && time() - $fetching < 7;
-    if ( (defined $parent && not defined $pjson) || (not defined $age) || time() - $age > 86400 ) {
-      $self->do("update beacons set fetching = strftime('%s', 'now') where major = ? and minor = ?", undef, $self->mm);
-      $self->ua->get(sprintf('%s/rtc/_design/lookup/_view/beacon?key=[%s,%s]', $self->couchdb, $self->mm) => sub {
-        my ($ua, $tx) = @_;
-        my $json = $tx->res->json->{rows}->[0]->{value};
-        $self->do("update beacons set fetching=null,age=strftime('%s', 'now'),parent=? where major = ? and minor = ?", undef, $json->{parent}, $self->mm);
-        $self->details($json->{parent}, undef);
-      });
-    }
+    return $self if defined $fetching && time() - $fetching < 7;
+    return $self->details($parent, undef) if $parent && defined $age && time() - $age < 86400;
+    $self->do("update beacons set fetching = strftime('%s', 'now') where major = ? and minor = ?", undef, $self->mm);
+    $self->ua->get(sprintf('%s/rtc/_design/lookup/_view/beacon?key=[%s,%s]', $self->couchdb, $self->mm) => sub {
+      my ($ua, $tx) = @_;
+      my $json = $tx->res->json->{rows}->[0]->{value};
+      $self->do("update beacons set fetching=null,age=strftime('%s', 'now'),parent=? where major = ? and minor = ?", undef, $json->{parent}, $self->mm);
+    });
   }
+  undef;
 }
 
 ####################################################################
 package main;
 use Mojolicious::Lite;
-no warnings;
 
 helper android => sub { Android->new };
 helper rtc => sub { RTC->new };
@@ -155,6 +202,7 @@ post '/beacon/:beacon/:rssi' => {rssi => undef} => sub {
 post '/response/:uuid/:show' => {show => undef} => sub {
   my $c = shift;
   $c->rtc->response($c->param('uuid') => $c->param('show'));
+  $c->android->reset;
   $c->render(text => $c->param('uuid') . ' => ' . ($c->param('show')?'Yes':'No'));
 };
 
@@ -175,14 +223,18 @@ websocket '/notification' => sub {
 };
 
 Mojo::IOLoop->recurring(0.25 => sub {
-  my $notification = app->android->notification; # Return JSON of not the beacon, but the details
-  my @beacons = sort { $a->rssi <=> $b->rssi } map { RTC->new(%$_) } app->android->estimotes; # Return array of JSON of the details
-  if ( defined $notification && grep { $_->id == $notification->{id} } strong_beacons(@beacons) ) {
+  my $notification = app->android->notification;
+  #my @beacons = sort { $a->rssi <=> $b->rssi } grep { !$_->noshow } map { RTC->new(%$_) } app->android->estimotes;
+  app->rtc->beacon(%$_) foreach app->android->estimotes;
+#warn $notification->{id};
+  #if ( $notification->{id} && grep { $_->id == $notification->{id} } strong_beacons(@beacons) ) {
+  if ( $notification->{id} && grep { $_->id == $notification->{id} } app->rtc->strong_beacons ) {
     #warn "No change\n";
-    return
+    return;
   } else {
     foreach ( @beacons ) {
-      #$_->dump;
+    foreach ( app->rtc->beacons ) {
+      warn sprintf "Looking to post %s\n", $_->rssi;
       if ( app->android->notify($_->details) ) { # Notify using the selected JSON details
         warn "Posted!\n";
         last;
@@ -196,19 +248,6 @@ Mojo::IOLoop->recurring(0.25 => sub {
 app->android->reset;
 app->rtc->create_tables;
 app->start;
-
-sub strong_beacons {
-  my @beacons = @_;
-  my @strong = ();
-  foreach ( 0..$#beacons ) {
-    if ( $beacons[$_]->rssi <= $beacons[0]->rssi + 5 ) {
-      push @strong, $beacons[$_];
-    } else {
-      last;
-    }
-  }
-  return @strong;
-}
 
 __DATA__
 
