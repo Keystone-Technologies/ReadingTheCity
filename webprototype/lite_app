@@ -2,7 +2,7 @@ package Android;
 use Mojo::Base -base;
 use Mojo::JSON 'j';
 
-use Data::Dump 'dump';
+use Data::Dump;
 
 has redis => sub { Mojo::Redis2->new };
 
@@ -11,7 +11,8 @@ sub dekey { split /_/, shift }
 
 sub notification {
   my $self = shift;
-  my $json = j($self->redis->get('android_notification')) or do { warn "No notification\n"; return {} };
+warn "Getting notification...\n";
+  ref (my $json = j($self->redis->get('android_notification'))) eq 'HASH' or return {};
   no warnings;
   warn sprintf("Notification: %s(%s) => %s (%s|%s|%s): %s\n", $json->{id}, $json->{rssi}, $json->{details}->{name}, $json->{details}->{child}, $json->{details}->{_id}, $json->{details}->{parent}, ($json->{details}->{child}?'':$json->{details}->{url}->[0]));
   $json;
@@ -19,8 +20,8 @@ sub notification {
 
 sub notify {
   my ($self, $details) = (shift, shift);
+warn "Notifying...\n";
   return unless ref $details eq 'HASH';
-Data::Dump::dump({Notify => j($details)});
   $self->redis->set(android_notification => j($details));
   return int(rand(10)) == 1 ? 0 : 1;  # Randomly fail on posting to notification bar
 }
@@ -30,11 +31,9 @@ sub estimotes {
   map { @_ = dekey($_); {major => shift, minor => shift, rssi => $self->redis->hget(beacons => $_)} } @{$self->redis->hkeys('beacons')};
 }
 
-sub reset {
-  my $self = shift;
-  $self->redis->del('android_notification');
-  warn dump($_) foreach $self->estimotes;
-}
+sub dump { Data::Dump::dump($_) foreach shift->estimotes }
+
+sub reset { shift->redis->del('android_notification') }
 
 sub _rssi { shift->redis->hset(beacons => key(shift, shift) => shift) }
 
@@ -60,6 +59,8 @@ sub beacon {
   my $key = join '', map { $mmr{$_} } qw/major minor/ or return;
   if ( $self->_beacons->{$key} ) {
     $self->_beacons->{$key}->rssi($mmr{rssi});
+#Data::Dump::dump({map { $_ => $self->_beacons->{$key}->{$_} } qw/major minor rssi noshow/});
+    $self->_beacons->{$key};
   } else {
     $self->_beacons->{$key} = RTC::Beacon->new(rtc => $self, %mmr);
   }
@@ -76,7 +77,7 @@ sub strong_beacons {
       last;
     }
   }
-  Data::Dump::dump(map { $_->rssi } @strong );
+  Data::Dump::dump({strong => [map { $_->rssi } @strong]});
   @strong;
 }
 
@@ -84,7 +85,6 @@ sub reset {
   my $self = shift;
   $self->do("delete from details");
   $self->do("delete from beacons");
-  $self->redis->del('notification');
   $self->redis->del('beacons');
 }
 
@@ -117,7 +117,7 @@ use Mojo::JSON 'j';
 
 use Data::Dump;
 
-has [qw/rtc major minor rssi/];
+has [qw/rtc major minor rssi noshow/];
 
 sub id { join '', map { $_[0]->$_ } qw/major minor/ }
 sub mm { map { $_[0]->$_ } qw/major minor/ }
@@ -127,13 +127,9 @@ sub dumplog { $_[0]->rtc->log->debug($_[0]->dump); $_[0] }
 
 sub json {
   my ($self, $details) = @_;
-  return unless $details;
-  $details = {id => $self->id, rssi => $self->rssi, noshow => $self->noshow, details => j($details)};
-#  Data::Dump::dump($details);
-  $details;
+  return $details ? {id => $self->id, rssi => $self->rssi, noshow => $self->noshow, details => j($details)} : undef;
 }
 
-has 'noshow';
 sub details {
   my ($self, $me, $child) = @_;
   if ( $me ) {
@@ -182,6 +178,9 @@ use Mojolicious::Lite;
 helper android => sub { Android->new };
 helper rtc => sub { RTC->new };
 
+app->android->dump;
+app->rtc->create_tables;
+
 get '/' => 'index';
 
 post '/rssi/:beacon/:rssi' => {rssi => undef} => sub {
@@ -205,6 +204,7 @@ post '/response/:uuid/:show' => {show => undef} => sub {
 del '/reset' => sub {
   my $c = shift;
   $c->rtc->reset;
+  $c->android->reset;
   $c->render(text => 'Reset');
 };
 
@@ -222,27 +222,21 @@ my $rtc = app->rtc;
 Mojo::IOLoop->recurring(0.25 => sub {
   my $notification = app->android->notification;
   $rtc->beacon(%$_) foreach app->android->estimotes;
-#foreach ( $rtc->strong_beacons ) {
-#  Data::Dump::dump($_->rssi, $notification->{rssi});
-#}
   if ( $notification->{id} && grep { $_->id == $notification->{id} } $rtc->strong_beacons ) {
-    #warn "No change\n";
+    warn "No change\n";
     return;
   } else {
     foreach ( $rtc->beacons ) {
-      warn sprintf "Looking to post %s\n", $_->rssi;
-      if ( app->android->notify($_->details) ) { # Notify using the selected JSON details
+      if ( app->android->notify($_->details) ) {
         warn "Posted!\n";
         last;
       } else {
-        #warn "Not Posted!\n";
+        warn "Not Posted!\n";
       }
     }
   }
 });
 
-app->android->reset;
-app->rtc->create_tables;
 app->start;
 
 __DATA__
