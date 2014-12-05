@@ -43,16 +43,27 @@ sub _rssi { shift->redis->hset(beacons => key(shift, shift) => shift) }
 ####################################################################
 package RTC;
 use Mojo::Base -base;
+use Mojo::Redis2;
+use Mojo::Log;
+use Mojo::UserAgent;	
+
+use DBI;
+
+has log => sub { Mojo::Log->new };
+has ua => sub { Mojo::UserAgent->new };
+has couchdb => 'http://db.xlxcd1.kit.cm:5984';
+has db => sub { DBI->connect("dbi:SQLite:dbname=sql.db","","",{AutoCommit=>1}) };
+has redis => sub { Mojo::Redis2->new };
 
 has _beacons => sub { {} };
 
 sub beacon {
   my ($self, %mmr) = @_;
-  my $key = join '', @mmr{major,minor} or return;
+  my $key = join '', map { $mmr{$_} } qw/major minor/ or return;
   if ( $self->_beacons->{$key} ) {
     $self->_beacons->{$key}->rssi($mmr{rssi});
   } else {
-    $self->_beacons->{$key} = RTC::Beacon->new(@_);
+    $self->_beacons->{$key} = RTC::Beacon->new(rtc => $self, %mmr);
   }
 }
  
@@ -73,30 +84,6 @@ sub strong_beacons {
   }
   @strong;
 }
-
-package RTC::Beacon;
-use Mojo::Base -base;
-use Mojo::JSON 'j';
-use Mojo::Redis2;
-use Mojo::Log;
-use Mojo::UserAgent;	
-
-use DBI;
-use Data::Dump;
-
-has log => sub { Mojo::Log->new };
-has ua => sub { Mojo::UserAgent->new };
-has couchdb => 'http://db.xlxcd1.kit.cm:5984';
-has db => sub { DBI->connect("dbi:SQLite:dbname=sql.db","","",{AutoCommit=>1}) };
-has redis => sub { Mojo::Redis2->new };
-
-has [qw/major minor rssi/];
-
-sub id { join '', map { $_[0]->$_ } qw/major minor/ }
-sub mm { map { $_[0]->$_ } qw/major minor/ }
-sub mmr { $_[0]->mm, $_[0]->rssi }
-sub dump { Data::Dump::dump({major => $_[0]->major, minor => $_[0]->minor, rssi => $_[0]->rssi}) }
-sub dumplog { $_[0]->log->debug($_[0]->dump); $_[0] }
 
 sub reset {
   my $self = shift;
@@ -129,6 +116,20 @@ sub selectrow_array {
   $rows, @row;
 }
 
+package RTC::Beacon;
+use Mojo::Base -base;
+use Mojo::JSON 'j';
+
+use Data::Dump;
+
+has [qw/rtc major minor rssi/];
+
+sub id { join '', map { $_[0]->$_ } qw/major minor/ }
+sub mm { map { $_[0]->$_ } qw/major minor/ }
+sub mmr { $_[0]->mm, $_[0]->rssi }
+sub dump { Data::Dump::dump({major => $_[0]->major, minor => $_[0]->minor, rssi => $_[0]->rssi}) }
+sub dumplog { $_[0]->rtc->log->debug($_[0]->dump); $_[0] }
+
 sub json {
   my ($self, $details) = @_;
   return unless $details;
@@ -141,8 +142,8 @@ has 'noshow';
 sub details {
   my ($self, $me, $child) = @_;
   if ( $me ) {
-    my ($rows, $_child, $fetching, $age, $parent, $json, $show, $pjson, $pshow) = $self->selectrow_array("select d0.uuid as cuuid,d1.fetching as fetching,d1.age as age,d1.parent as parent,d1.json as json,d1.show as show,d2.json as pjson,d2.show as pshow from details d1 left join details d2 on d1.parent=d2.uuid left join details d0 on d0.parent=d1.uuid where d1.uuid = ? limit 1", undef, $me);
-    $self->do('insert into details (uuid) values (?)', undef, $me) unless $rows;
+    my ($rows, $_child, $fetching, $age, $parent, $json, $show, $pjson, $pshow) = $self->rtc->selectrow_array("select d0.uuid as cuuid,d1.fetching as fetching,d1.age as age,d1.parent as parent,d1.json as json,d1.show as show,d2.json as pjson,d2.show as pshow from details d1 left join details d2 on d1.parent=d2.uuid left join details d0 on d0.parent=d1.uuid where d1.uuid = ? limit 1", undef, $me);
+    $self->rtc->do('insert into details (uuid) values (?)', undef, $me) unless $rows;
 
     #return if defined $show;
     #return $self->details($parent, $me) if $parent && defined $age && time() - $age < 86400 && not defined $pshow;
@@ -155,25 +156,25 @@ sub details {
     return $self->details($parent, $me) if defined $parent && not defined $pshow;
     if ( (not defined $json) || ($age && time() - $age > 86400) ) {
       warn "Fetching...\n";
-      $self->do("update details set fetching = strftime('%s', 'now') where uuid = ?", undef, $me);
-      $self->ua->get(sprintf('%s/rtc/_design/lookup/_view/details?key="%s"', $self->couchdb, $me) => sub {
+      $self->rtc->do("update details set fetching = strftime('%s', 'now') where uuid = ?", undef, $me);
+      $self->rtc->ua->get(sprintf('%s/rtc/_design/lookup/_view/details?key="%s"', $self->rtc->couchdb, $me) => sub {
         my ($ua, $tx) = @_;
         my $json = $tx->res->json->{rows}->[0]->{value};
         $json->{child} = $child;
-        $self->do("update details set fetching=null,age=strftime('%s', 'now'),parent=?,json=?,show=null where uuid = ?", undef, $json->{parent}, j($json), $me);
+        $self->rtc->do("update details set fetching=null,age=strftime('%s', 'now'),parent=?,json=?,show=null where uuid = ?", undef, $json->{parent}, j($json), $me);
       });
     }
     return $self->json($json);
   } else {
-    my ($rows, $fetching, $age, $parent) = $self->selectrow_array('select fetching,age,parent from beacons where major = ? and minor = ? limit 1', undef, $self->mm);
-    $self->do('insert into beacons (major, minor) values (?, ?)', undef, $self->mm) unless $rows;
+    my ($rows, $fetching, $age, $parent) = $self->rtc->selectrow_array('select fetching,age,parent from beacons where major = ? and minor = ? limit 1', undef, $self->mm);
+    $self->rtc->do('insert into beacons (major, minor) values (?, ?)', undef, $self->mm) unless $rows;
     return $self if defined $fetching && time() - $fetching < 7;
     return $self->details($parent, undef) if $parent && defined $age && time() - $age < 86400;
-    $self->do("update beacons set fetching = strftime('%s', 'now') where major = ? and minor = ?", undef, $self->mm);
-    $self->ua->get(sprintf('%s/rtc/_design/lookup/_view/beacon?key=[%s,%s]', $self->couchdb, $self->mm) => sub {
+    $self->rtc->do("update beacons set fetching = strftime('%s', 'now') where major = ? and minor = ?", undef, $self->mm);
+    $self->rtc->ua->get(sprintf('%s/rtc/_design/lookup/_view/beacon?key=[%s,%s]', $self->rtc->couchdb, $self->mm) => sub {
       my ($ua, $tx) = @_;
       my $json = $tx->res->json->{rows}->[0]->{value};
-      $self->do("update beacons set fetching=null,age=strftime('%s', 'now'),parent=? where major = ? and minor = ?", undef, $json->{parent}, $self->mm);
+      $self->rtc->do("update beacons set fetching=null,age=strftime('%s', 'now'),parent=? where major = ? and minor = ?", undef, $json->{parent}, $self->mm);
     });
   }
   undef;
@@ -224,15 +225,11 @@ websocket '/notification' => sub {
 
 Mojo::IOLoop->recurring(0.25 => sub {
   my $notification = app->android->notification;
-  #my @beacons = sort { $a->rssi <=> $b->rssi } grep { !$_->noshow } map { RTC->new(%$_) } app->android->estimotes;
   app->rtc->beacon(%$_) foreach app->android->estimotes;
-#warn $notification->{id};
-  #if ( $notification->{id} && grep { $_->id == $notification->{id} } strong_beacons(@beacons) ) {
   if ( $notification->{id} && grep { $_->id == $notification->{id} } app->rtc->strong_beacons ) {
     #warn "No change\n";
     return;
   } else {
-    foreach ( @beacons ) {
     foreach ( app->rtc->beacons ) {
       warn sprintf "Looking to post %s\n", $_->rssi;
       if ( app->android->notify($_->details) ) { # Notify using the selected JSON details
