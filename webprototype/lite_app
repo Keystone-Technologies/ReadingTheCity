@@ -19,10 +19,8 @@ sub notification {
 
 sub notify {
   my ($self, $details) = (shift, shift);
-#  warn $self->notification->{id};
-#warn ref $details ? $details->{id} : $details if $details;
-  return unless ref $details;
-#warn "NOTIFY\n";
+  return unless ref $details eq 'HASH';
+Data::Dump::dump({Notify => j($details)});
   $self->redis->set(android_notification => j($details));
   return int(rand(10)) == 1 ? 0 : 1;  # Randomly fail on posting to notification bar
 }
@@ -67,11 +65,7 @@ sub beacon {
   }
 }
  
-sub beacons {
-  my $self = shift;
-  sort { $a->rssi <=> $b->rssi } grep { !$_->noshow } values %{$self->_beacons};
-}
- 
+sub beacons { sort { $a->rssi <=> $b->rssi } grep { !$_->noshow } values %{shift->_beacons} }
 sub strong_beacons {
   my @beacons = shift->beacons;
   my @strong = ();
@@ -82,6 +76,7 @@ sub strong_beacons {
       last;
     }
   }
+  Data::Dump::dump(map { $_->rssi } @strong );
   @strong;
 }
 
@@ -189,7 +184,7 @@ helper rtc => sub { RTC->new };
 
 get '/' => 'index';
 
-post '/beacon/:beacon/:rssi' => {rssi => undef} => sub {
+post '/rssi/:beacon/:rssi' => {rssi => undef} => sub {
   my $c = shift;
   if ( ($c->param('beacon') =~ /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-(\d+)-(\d+)$/) ) {
     $c->android->_rssi($2, $3, $c->param('rssi'));
@@ -227,6 +222,9 @@ my $rtc = app->rtc;
 Mojo::IOLoop->recurring(0.25 => sub {
   my $notification = app->android->notification;
   $rtc->beacon(%$_) foreach app->android->estimotes;
+#foreach ( $rtc->strong_beacons ) {
+#  Data::Dump::dump($_->rssi, $notification->{rssi});
+#}
   if ( $notification->{id} && grep { $_->id == $notification->{id} } $rtc->strong_beacons ) {
     #warn "No change\n";
     return;
