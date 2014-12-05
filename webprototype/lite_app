@@ -223,14 +223,15 @@ websocket '/notification' => sub {
   });
 };
 
+my $rtc = app->rtc;
 Mojo::IOLoop->recurring(0.25 => sub {
   my $notification = app->android->notification;
-  app->rtc->beacon(%$_) foreach app->android->estimotes;
-  if ( $notification->{id} && grep { $_->id == $notification->{id} } app->rtc->strong_beacons ) {
+  $rtc->beacon(%$_) foreach app->android->estimotes;
+  if ( $notification->{id} && grep { $_->id == $notification->{id} } $rtc->strong_beacons ) {
     #warn "No change\n";
     return;
   } else {
-    foreach ( app->rtc->beacons ) {
+    foreach ( $rtc->beacons ) {
       warn sprintf "Looking to post %s\n", $_->rssi;
       if ( app->android->notify($_->details) ) { # Notify using the selected JSON details
         warn "Posted!\n";
