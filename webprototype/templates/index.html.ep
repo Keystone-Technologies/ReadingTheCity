@@ -54,7 +54,7 @@
                         var beacon = $(this).parent().parent().find(".FloatLeft > span").first();
                         $(this).parent().parent().toggleClass("hide");
                         if ( $(this).parent().parent().hasClass("hide") ) {
-                            $.post("/beacon/"+beacon.attr('id')+"/"+(ui.value*-1), function(data){
+                            $.post("/rssi/"+beacon.attr('id')+"/"+(ui.value*-1), function(data){
                                 // Anything to do here?  Probably not.
                             });
                             $(beacon).slider("disable");
@@ -67,7 +67,7 @@
                     var beacon = $(this);
                     //console.log("Setting up slider " + beacon.attr('id'));
                     var value = parseInt( $( this ).text(), 10 );
-                    $.post("/beacon/"+beacon.attr('id'), function(data){
+                    $.post("/rssi/"+beacon.attr('id'), function(data){
                       $(beacon).parent().parent().find("span.major").first().html(data.major);
                       $(beacon).parent().parent().find("span.minor").first().html(data.minor);
                       $(beacon).parent().parent().find("span.rssi").first().html(data.rssi);
@@ -80,7 +80,7 @@
                         orientation: "vertical",
                         stop: function (e, ui) {
                             if ( $(beacon).parent().parent().find("input[type=checkbox]").first().is(':checked') == false ) {
-                                $.post("/beacon/"+beacon.attr('id')+"/"+(ui.value*-1), function(data){
+                                $.post("/rssi/"+beacon.attr('id')+"/"+(ui.value*-1), function(data){
                                     //console.log(data.rssi);
                                     $(beacon).parent().parent().find("span.rssi").first().html(data.rssi);
                                     return;
