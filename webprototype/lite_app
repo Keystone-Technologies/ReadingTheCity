@@ -24,10 +24,7 @@ sub notification {
   my $self = shift;
   die "No id supplied\n" unless $self->id;
   my $notification = $self->redis->get($self->id) or return;
-  my $obj = j($notification);
-no warnings;
-warn sprintf("Notification: %s(%s) => %s (%s|%s|%s): %s\n", join('_', $obj->{major}, $obj->{minor}), $obj->{rssi}, $obj->{name}, $obj->{child}, $obj->{_id}, $obj->{parent}, ($obj->{child}?'':$obj->{url}->[0]));
-  $obj;
+  j($notification);
 }
 
 sub notify {
@@ -35,10 +32,8 @@ sub notify {
   die "No id supplied\n" unless $self->id;
   return unless ref $obj eq 'HASH';
   #int(rand(10)) or return;  # Randomly fail on posting to notification bar
-#no warnings;
-#warn sprintf "Checking details for %s -> %s | %s %s %s | %s %s %s\n", $self->estimote->rssi, $_child, $me, j($json||'{}')->{name}, $show, $parent, j($pjson||'{}')->{name}, $pshow;
   my $notify = $self->redis->set($self->id => j($obj)) if ref $obj eq 'HASH';
-  $notify;
+  defined $notify ? $obj : $notify;
 }
 
 sub clear {
@@ -75,6 +70,8 @@ package Android::EstimoteSDK::Beacon;
 use Mojo::Base -base;
 
 has 'estimote';
+
+#sub new { my $self = shift->SUPER::new(@_); warn sprintf "New Estimote Beacon: %s\n", $self->key; $self; }
 
 has [qw/major minor/];
 sub key { join '_', $_[0]->major, $_[0]->minor }
@@ -116,6 +113,7 @@ sub create_tables {
 
 sub response {
   my ($self, $uuid, $show) = @_;
+Data::Dump::dump({$uuid => $show});
   $self->db->do("update details set age=strftime('%s', 'now'),show=? where uuid = ?", undef, $show, $uuid);
 }
 
@@ -146,16 +144,18 @@ sub options {
   my $self = shift;
   my @options = ();
   my $notification = $self->rtc->notifier->notification;
-  foreach my $estimote ( sort { $a->rssi <=> $b->rssi } $self->estimotesdk->estimotes ) {
+  my @estimotes = sort { $a->rssi <=> $b->rssi } $self->estimotesdk->estimotes;
+  foreach my $estimote ( @estimotes ) {
     $self->details->{$estimote->key} ||= RTC::Details->new(rtc => $self->rtc, estimote => $estimote);
     $self->details->{$estimote->key}->pull_details;
     next unless ref $self->details->{$estimote->key}->json eq 'HASH';
     next if defined $self->details->{$estimote->key}->json->{show};
-    next if ref $notification eq 'HASH' && $self->details->{$estimote->key}->json->{_id} eq $notification->{_id};
+    last if ref $notification eq 'HASH' && $self->details->{$estimote->key}->json->{_id} eq $notification->{_id};
     push @options, $self->details->{$estimote->key} if !@options || $self->details->{$estimote->key}->estimote->rssi <= $options[0]->estimote->rssi + 5;
   }
+  unshift @options, $self->details->{$estimotes[0]->key} if @options;
   delete $self->details->{$_} foreach grep { time() - $self->details->{$_}->time > 86400 } keys %{$self->details};
-#Data::Dump::dump({options => map { $_->estimote->rssi } @options});
+Data::Dump::dump({options => [map { $_->estimote->rssi } @options]}) if @options;
   @options;
 };
 
@@ -197,6 +197,7 @@ sub pull_details {
     $self->do('insert into beacons (major, minor) values (?, ?)', undef, @mm) unless $rows;
     return $self if defined $fetching && time() - $fetching < 7;
     return $self->pull_details($parent, undef) if $parent && defined $age && time() - $age < 86400;
+    warn "Fetching...\n";
     $self->do("update beacons set fetching = strftime('%s', 'now') where major = ? and minor = ?", undef, @mm);
     $self->rtc->ua->get(sprintf('%s/rtc/_design/lookup/_view/beacon?key=[%s,%s]', $self->rtc->couchdb, @mm) => sub {
       my ($ua, $tx) = @_;
@@ -256,7 +257,7 @@ websocket '/notification' => sub {
   $c->on(frame => sub {
     my ($tx, $frame) = @_;
     Mojo::IOLoop->recurring(1 => sub {
-      $tx->send({json => $rtc->notifier->notification});
+      $tx->send({json => $rtc->notifier->notification||{}});
     });
   });
 };
@@ -264,11 +265,17 @@ websocket '/notification' => sub {
 $rtc->create_tables;
 $rtc->beacon->dump;
 
-Mojo::IOLoop->recurring(0.25 => sub {
+Mojo::IOLoop->recurring(0.5 => sub {
   if ( my @options = $rtc->beacon->options ) {
+    my $obj = $rtc->notifier->notification;
+    no warnings;
+    warn sprintf "Current Notification: %s(%s) => %s (%s|%s|%s): %s\n", join('_', $obj->{major}, $obj->{minor}), $obj->{rssi}, $obj->{name}, $obj->{child}, $obj->{_id}, $obj->{parent}, ($obj->{child}?'':$obj->{url}->[0]);
+    #no warnings;
+    #warn sprintf "Checking details for %s -> %s | %s %s %s | %s %s %s\n", $self->estimote->rssi, $_child, $me, j($json||'{}')->{name}, $show, $parent, j($pjson||'{}')->{name}, $pshow;
     foreach ( @options ) {
-      if ( $rtc->notifier->notify({major => $_->estimote->major, minor => $_->estimote->minor, rssi => $_->estimote->rssi, %{$_->json}}) ) {
-        warn "Posted!\n";
+      if ( my $obj = $rtc->notifier->notify({major => $_->estimote->major, minor => $_->estimote->minor, rssi => $_->estimote->rssi, %{$_->json}}) ) {
+        no warnings;
+        warn sprintf "New Notification: %s(%s) => %s (%s|%s|%s): %s\n", join('_', $obj->{major}, $obj->{minor}), $obj->{rssi}, $obj->{name}, $obj->{child}, $obj->{_id}, $obj->{parent}, ($obj->{child}?'':$obj->{url}->[0]);
         last;
       } else {
         warn "Not Posted!\n";

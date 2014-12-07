@@ -17,9 +17,8 @@
         <script>
             $(function(){
                 function notify (json) {
-                  if ( json == null ) {
-                    $('div#NotificationBar').hide();
-                  } else {
+                  if ( json._id ) {
+                    $('div#NotificationBar').attr("uuid", json._id);
                     if ( json.thumbnail ) {
                       $('div#NotificationBar img#thumbnail').attr("src", json.thumbnail);
                       $('div#NotificationBar img#thumbnail').show();
@@ -28,7 +27,7 @@
                     }
                     //$('div#NotificationBar span#id').html(json.major + ',' + json.minor);
                     $('div#NotificationBar a#url').attr("href", json.url).html(json.name);
-                    $('div#NotificationBar span#description').html(json.description);
+                    $('div#NotificationBar span#description').html(json.description+"<p>"+json._id);
                     if ( json.child == null )
                       $('div#NotificationBar td#show').hide();
                     else
@@ -36,25 +35,12 @@
                     $('.Beacon').removeClass("strongest");
                     $('#b9407f30-f5f8-466e-aff9-25556b57fe6d-'+json.major+'-'+json.minor).addClass("strongest");
                     $('div#NotificationBar').show();
+                  } else {
+                    $('div#NotificationBar').hide();
                   }
                 }
-                var uuid;
-                var ws = new WebSocket('<%= url_for('notification')->to_abs %>');
-                ws.onmessage = function (event) {
-                  notify(JSON.parse(event.data));
-                };
-                ws.onopen = function (event) {
-                  ws.send(1);
-                };
-                $('div#NotificationBar div#show > div#yes').click(function(){
-                  if ( uuid )
-                    $.post("/response/"+uuid+"/1");
-                });
-                $('div#NotificationBar div#show > div#no').click(function(){
-                  if ( uuid )
-                    $.post("/response/"+uuid+"/0");
-                });
-                $(".Beacon > .FloatLeft > span.slider").each(function(){
+                function setup_sliders () {
+                  $(".Beacon > .FloatLeft > span.slider").each(function(){
                     var beacon = $(this).parent().parent();
                     var beaconuuid = $(beacon).attr('id');
                     var slider = $(this).empty().slider({
@@ -74,7 +60,30 @@
                       $(beacon).find("span.rssi").html(data.rssi);
                       $(slider).slider("value", -1*data.rssi);
                     });
+                  });
+                }
+                $('div#NotificationBar td#show img#yes').click(function(){
+                  var uuid = $('div#NotificationBar').attr("uuid");
+                  if ( uuid )
+                    $.post("/response/"+uuid+"/1");
                 });
+                $('div#NotificationBar td#show img#no').click(function(){
+                  var uuid = $('div#NotificationBar').attr("uuid");
+                  if ( uuid )
+                    $.post("/response/"+uuid+"/0");
+                });
+                $('div#reset').click(function(){
+                  $.ajax({type:"DELETE",url:"/reset"});
+                  setup_sliders();
+                });
+                setup_sliders();
+                var ws = new WebSocket('<%= url_for('notification')->to_abs %>');
+                ws.onmessage = function (event) {
+                  notify(JSON.parse(event.data));
+                };
+                ws.onopen = function (event) {
+                  ws.send(1);
+                };
             });
         </script>
     </head>
@@ -82,6 +91,7 @@
 
         <div id="Wrapper">
 
+            <div id="reset">Reset</div>
             <div id="NotificationBar">
               <table align="center">
                 <tr>
