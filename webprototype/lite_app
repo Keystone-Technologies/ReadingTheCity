@@ -260,10 +260,12 @@ del '/reset' => sub { shift->render(text => $rtc->reset) };
 
 websocket '/notification' => sub {
   my $c = shift;
+  my $loop;
   $c->on(frame => sub {
-    my ($tx, $frame) = @_;
-    Mojo::IOLoop->recurring(1 => sub {
-      $tx->send({json => $rtc->notifier->notification||{}});
+    my ($ws, $frame) = @_;
+# How to kill this timer when the websocket dies??
+    $loop = Mojo::IOLoop->recurring(1 => sub {
+      $ws->send({json => $rtc->notifier->notification||{}}) if $ws->can('tx') && $ws->tx && $ws->tx->can('is_websocket') && $ws->tx->is_websocket;
     });
   });
 };
