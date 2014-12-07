@@ -39,6 +39,7 @@ sub notify {
 sub clear {
   my $self = shift;
   die "No id supplied\n" unless $self->id;
+warn "!!!! CLEAR\n";
   $self->redis->del($self->id);
 }
 
@@ -52,16 +53,16 @@ has redis => sub { Mojo::Redis2->new };
 
 sub estimotes {
   my $self = shift;
-  map { Android::EstimoteSDK::Beacon->new(estimote => $self, _dekey($_)) } @{$self->redis->hkeys('estimote_beacons')};
+  [map { Android::EstimoteSDK::Beacon->new(estimote => $self, _dekey($_)) } @{$self->redis->hkeys('estimote_beacons')}];
 }
 
 sub estimote {
   my $self = shift;
   my $key = join '_', @_;
-  ((grep { $_->key eq $key } $self->estimotes)[0]);
+  ((grep { $_->key eq $key } @{$self->estimotes})[0]);
 }
 
-sub dump { Data::Dump::dump([map { $_->rssi } shift->estimotes]) }
+sub dump { Data::Dump::dump([map { $_->rssi } @{shift->estimotes}]) }
 
 sub _dekey { my ($major, $minor) = split /_/, shift; return (major => $major, minor => $minor) }
 
@@ -83,6 +84,7 @@ sub rssi {
     $self->estimote->redis->hget(estimote_beacons => $self->key);
   }
 }
+sub dump { my $self = shift; Data::Dump::dump({major => $self->major, minor => $self->minor, rssi => $self->rssi}) }
 
 ####################################################################
 ####################################################################
@@ -122,11 +124,11 @@ sub reset {
   $self->db->do("delete from details");
   $self->db->do("delete from beacons");
   $self->redis->del('estimote_beacons');
-  $self->notifier->clear;
   foreach ( keys %{$self->config->{beacons}} ) {
     $self->log->info(sprintf "Adding beacon $_ => %s", $self->config->{beacons}->{$_});
     $self->redis->hset(estimote_beacons => $_ => $self->config->{beacons}->{$_});
   }
+  $self->notifier->clear;
 }
 
 #sub dump { Data::Dump::dump({major => $_[0]->major, minor => $_[0]->minor, rssi => $_[0]->rssi}) }
@@ -144,22 +146,26 @@ sub options {
   my $self = shift;
   my @options = ();
   my $notification = $self->rtc->notifier->notification;
-  my @estimotes = sort { $a->rssi <=> $b->rssi } $self->estimotesdk->estimotes;
+  my @estimotes = sort { $a->rssi <=> $b->rssi } @{$self->estimotesdk->estimotes};
+  my $current = join '_', $notification->{major}, $notification->{minor} if $notification;
+  $current = $current && $self->details->{$current} && ref $self->details->{$current}->json eq 'HASH' ? $self->details->{$current} : undef;
+warn sprintf "Current: %s -> %s (%s)\n", $self->details->{$current}->estimote->rssi, $self->details->{$current}->json->{_id}, $notification->{_id} if $current && $self->details->{$current};
   foreach my $estimote ( @estimotes ) {
     $self->details->{$estimote->key} ||= RTC::Details->new(rtc => $self->rtc, estimote => $estimote);
     $self->details->{$estimote->key}->pull_details;
     next unless ref $self->details->{$estimote->key}->json eq 'HASH';
     next if defined $self->details->{$estimote->key}->json->{show};
-    last if ref $notification eq 'HASH' && $self->details->{$estimote->key}->json->{_id} eq $notification->{_id};
-    push @options, $self->details->{$estimote->key} if !@options || $self->details->{$estimote->key}->estimote->rssi <= $options[0]->estimote->rssi + 5;
+    next if $current && abs($estimote->rssi) <= abs($current->estimote->rssi) + 5;
+    next if $current && $self->details->{$estimote->key}->json->{_id} eq $current->json->{_id};
+    push @options, $self->details->{$estimote->key};
   }
-  unshift @options, $self->details->{$estimotes[0]->key} if @options;
   delete $self->details->{$_} foreach grep { time() - $self->details->{$_}->time > 86400 } keys %{$self->details};
+Data::Dump::dump({available => [map { $_->rssi } @estimotes]}) if @options;
 Data::Dump::dump({options => [map { $_->estimote->rssi } @options]}) if @options;
   @options;
 };
 
-sub dump { Data::Dump::dump({rtc_beacon_dump => [map { $_->rssi } shift->estimotesdk->estimotes]}) }
+sub dump { Data::Dump::dump({rtc_beacon_dump => [map { $_->rssi } @{shift->estimotesdk->estimotes}]}) }
 
 ####################################################################
 package RTC::Details;

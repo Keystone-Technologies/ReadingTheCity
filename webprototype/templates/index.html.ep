@@ -70,7 +70,6 @@
                         },
                         stop: function (e, ui) {
                           $.post("/rssi/"+beaconuuid+"/"+(ui.value*-1), function(data){
-                            console.log(data.rssi);
                             $(beacon).find("span.rssi").html(data.rssi);
                           });
                         }
