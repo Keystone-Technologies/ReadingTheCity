@@ -48,8 +48,12 @@
                         range: "min",
                         animate: true,
                         orientation: "vertical",
+                        slide: function (e, ui) {
+                          $(beacon).find("span.rssi").html(ui.value*-1);
+                        },
                         stop: function (e, ui) {
                           $.post("/rssi/"+beaconuuid+"/"+(ui.value*-1), function(data){
+                            console.log(data.rssi);
                             $(beacon).find("span.rssi").html(data.rssi);
                           });
                         }
