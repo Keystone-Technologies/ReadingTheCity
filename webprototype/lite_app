@@ -159,7 +159,7 @@ Data::Dump::dump({options => [map { $_->estimote->rssi } @options]}) if @options
   @options;
 };
 
-sub dump { Data::Dump::dump(map { $_->rssi } shift->estimotesdk->estimotes) }
+sub dump { Data::Dump::dump({rtc_beacon_dump => [map { $_->rssi } shift->estimotesdk->estimotes]}) }
 
 ####################################################################
 package RTC::Details;
@@ -269,8 +269,7 @@ Mojo::IOLoop->recurring(0.5 => sub {
   if ( my @options = $rtc->beacon->options ) {
     my $obj = $rtc->notifier->notification;
     no warnings;
-    warn sprintf "Current Notification: %s(%s) => %s (%s|%s|%s): %s\n", join('_', $obj->{major}, $obj->{minor}), $obj->{rssi}, $obj->{name}, $obj->{child}, $obj->{_id}, $obj->{parent}, ($obj->{child}?'':$obj->{url}->[0]);
-    #no warnings;
+    warn sprintf "Current Notification: %s(%s) => %s (%s|%s|%s): %s\n", join('_', $obj->{major}, $obj->{minor}), $obj->{rssi}, $obj->{name}, $obj->{child}, $obj->{_id}, $obj->{parent}, ($obj->{child}?'':$obj->{url}->[0]) if keys %$obj;
     #warn sprintf "Checking details for %s -> %s | %s %s %s | %s %s %s\n", $self->estimote->rssi, $_child, $me, j($json||'{}')->{name}, $show, $parent, j($pjson||'{}')->{name}, $pshow;
     foreach ( @options ) {
       if ( my $obj = $rtc->notifier->notify({major => $_->estimote->major, minor => $_->estimote->minor, rssi => $_->estimote->rssi, %{$_->json}}) ) {

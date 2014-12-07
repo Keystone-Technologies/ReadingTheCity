@@ -16,6 +16,23 @@
         </style>
         <script>
             $(function(){
+                function createWebSocket () {
+                  var ws = new WebSocket('<%= url_for('notification')->to_abs %>');
+                  ws.onopen = function (event) {
+                    console.log("Web Socket Open!");
+                    ws.send(1);
+                  };
+                  ws.onmessage = function (event) {
+                    notify(JSON.parse(event.data));
+                  };
+                  ws.onerror = function () {
+                    console.log("Web Socket Error!");
+                  };
+                  ws.onclose = function () {
+                    console.log("Web Socket Close!");
+                    setTimeout(function () { createWebSocket(); }, 2*1000);
+                  };
+                };
                 function notify (json) {
                   if ( json._id ) {
                     $('div#NotificationBar').attr("uuid", json._id);
@@ -81,13 +98,7 @@
                   setup_sliders();
                 });
                 setup_sliders();
-                var ws = new WebSocket('<%= url_for('notification')->to_abs %>');
-                ws.onmessage = function (event) {
-                  notify(JSON.parse(event.data));
-                };
-                ws.onopen = function (event) {
-                  ws.send(1);
-                };
+                createWebSocket();
             });
         </script>
     </head>
