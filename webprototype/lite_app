@@ -60,9 +60,15 @@ sub estimotes {
   map { Android::EstimoteSDK::Beacon->new(estimote => $self, _dekey($_)) } @{$self->redis->hkeys('estimote_beacons')};
 }
 
-sub dump { Data::Dump::dump(shift->estimotes) }
+sub estimote {
+  my $self = shift;
+  my $key = join '_', @_;
+  ((grep { $_->key eq $key } $self->estimotes)[0]);
+}
 
-sub _dekey { my ($major, $minor) = split /_/, shift; return major => $major, minor => $minor }
+sub dump { Data::Dump::dump([map { $_->rssi } shift->estimotes]) }
+
+sub _dekey { my ($major, $minor) = split /_/, shift; return (major => $major, minor => $minor) }
 
 ####################################################################
 package Android::EstimoteSDK::Beacon;
@@ -75,9 +81,9 @@ sub key { join '_', $_[0]->major, $_[0]->minor }
 sub rssi {
   my ($self, $rssi) = @_;
   if ( $rssi ) {
-    $self->estimote->redis->hset(estimote_beacons => $self->key => $rssi)
+    defined $self->estimote->redis->hset(estimote_beacons => $self->key => $rssi) and $rssi;
   } else {
-    $self->estimote->redis->hget(estimote_beacons => $self->key)
+    $self->estimote->redis->hget(estimote_beacons => $self->key);
   }
 }
 
@@ -149,7 +155,6 @@ sub options {
     push @options, $self->details->{$estimote->key} if !@options || $self->details->{$estimote->key}->estimote->rssi <= $options[0]->estimote->rssi + 5;
   }
   delete $self->details->{$_} foreach grep { time() - $self->details->{$_}->time > 86400 } keys %{$self->details};
-  @options;
 #Data::Dump::dump({options => map { $_->estimote->rssi } @options});
   @options;
 };
@@ -230,8 +235,7 @@ get '/' => 'index';
 post '/rssi/:beacon/:rssi' => {rssi => undef} => sub {
   my $c = shift;
   if ( ($c->param('beacon') =~ /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-(\d+)-(\d+)$/) ) {
-    $rtc->estimote->beacon($2, $3)->rssi($c->param('rssi'));
-    $c->render(text => '');
+    $c->render(text => $rtc->beacon->estimotesdk->estimote($2, $3)->rssi($c->param('rssi')));
   } else {
     $c->render(text => '', status => 401);
   }

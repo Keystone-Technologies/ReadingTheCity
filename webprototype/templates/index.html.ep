@@ -19,7 +19,7 @@
                 var ws = new WebSocket('<%= url_for('notification')->to_abs %>');
                 ws.onmessage = function (event) {
                   var json = JSON.parse(event.data);
-                  if ( json == null || json.json == null ) {
+                  if ( json == null ) {
                     uuid = null;
                     $('div#NotificationBar > div#thumbnail').html('');
                     $('div#NotificationBar > div#name').html('');
@@ -27,12 +27,12 @@
                     $('div#NotificationBar > div#url').html('');
                     return;
                   }
-                  uuid = json.json._id;
-                  $('div#NotificationBar > div#thumbnail').html(json.json.thumbnail);
-                  $('div#NotificationBar > div#name').html(json.json.name);
-                  $('div#NotificationBar > div#description').html(json.json.description);
-                  $('div#NotificationBar > div#url').html(json.json.url[0]);
-                  if ( json.json.child == null )
+                  uuid = json._id;
+                  $('div#NotificationBar > div#thumbnail').html(json.thumbnail);
+                  $('div#NotificationBar > div#name').html(json.name);
+                  $('div#NotificationBar > div#description').html(json.description);
+                  $('div#NotificationBar > div#url').html(json.url[0]);
+                  if ( json.child == null )
                     $('div#NotificationBar > div#show').hide();
                   else
                     $('div#NotificationBar > div#show').show();
