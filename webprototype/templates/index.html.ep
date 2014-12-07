@@ -11,6 +11,7 @@
         <script src="http://code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
         <style>
              div#NotificationBar { display:none; }
+             .strongest { background-color: lightgray; }
              .hide { color:gray }
         </style>
         <script>
@@ -25,13 +26,15 @@
                     } else {
                       $('div#NotificationBar img#thumbnail').hide();
                     }
-                    $('div#NotificationBar span#id').html(json.major + ',' + json.minor);
+                    //$('div#NotificationBar span#id').html(json.major + ',' + json.minor);
                     $('div#NotificationBar a#url').attr("href", json.url).html(json.name);
                     $('div#NotificationBar span#description').html(json.description);
                     if ( json.child == null )
-                      $('div#NotificationBar div#show').hide();
+                      $('div#NotificationBar td#show').hide();
                     else
-                      $('div#NotificationBar div#show').show();
+                      $('div#NotificationBar td#show').show();
+                    $('.Beacon').removeClass("strongest");
+                    $('#b9407f30-f5f8-466e-aff9-25556b57fe6d-'+json.major+'-'+json.minor).addClass("strongest");
                     $('div#NotificationBar').show();
                   }
                 }
@@ -80,16 +83,19 @@
         <div id="Wrapper">
 
             <div id="NotificationBar">
-              <div id="image">
-                <img id="thumbnail" />
-              </div>
-              <div id="details">
-                <span id="id"></span>: <a id="url" href="#"></a>
-                <span id="description"></span>
-              </div>
-              <div id="show">
-                <div id="yes">Yes</div><div id="no">No</div>
-              </div>
+              <table align="center">
+                <tr>
+                  <td id="image"><img id="thumbnail" style="cell-spacing: 5px"/></td>
+                  <td id="details" style="text-align: left;cell-spacing: 5px">
+                    <p><!-- <span id="id"></span>: --><a id="url" href="#"></a></p>
+                    <p><span id="description"></span></p>
+                  </td>
+                  <td id="show" style="cell-spacing: 5px">
+                    <p><img id="yes" src="http://www.iconsdb.com/icons/download/black/check-mark-8-48.png" /></p>
+                    <p><img id="no" src="http://www.iconsdb.com/icons/download/black/x-mark-5-48.png" /></p>
+                  </td>
+                </tr>
+              </table>
             </div>
 
             <div id="Input">
