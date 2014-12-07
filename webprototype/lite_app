@@ -235,7 +235,7 @@ get '/' => 'index';
 post '/rssi/:beacon/:rssi' => {rssi => undef} => sub {
   my $c = shift;
   if ( ($c->param('beacon') =~ /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-(\d+)-(\d+)$/) ) {
-    $c->render(text => $rtc->beacon->estimotesdk->estimote($2, $3)->rssi($c->param('rssi')));
+    $c->render(json => {major => $2, minor => $3, rssi => $rtc->beacon->estimotesdk->estimote($2, $3)->rssi($c->param('rssi'))});
   } else {
     $c->render(text => '', status => 401);
   }
