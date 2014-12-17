@@ -6,22 +6,21 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
-
-import com.estimote.sdk.Beacon;
-
-import org.json.JSONArray;
 import org.json.JSONObject;
-
-import java.text.ParseException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class DetailsDataSource {
 
     private SQLiteDatabase database;
     private DetailsTable dbDetailsTable;
-    private String[] allColumns = { DetailsTable.COLUMN_ID, DetailsTable.COLUMN_DETAILS};
+    private String[] allColumns = { DetailsTable.COLUMN_ID, DetailsTable.COLUMN_FETCHING,
+            DetailsTable.COLUMN_AGE, DetailsTable.COLUMN_PARENT, DetailsTable.COLUMN_DETAILS,
+            DetailsTable.COLUMN_RESPONSE};
 
     public DetailsDataSource(Context context) {
         dbDetailsTable = new DetailsTable(context);
@@ -35,32 +34,88 @@ public class DetailsDataSource {
         dbDetailsTable.close();
     }
 
-    public void createDetail(String id, String detail) {
+    public void createDetail(String id, Date date, String detail) {
         open();
         ContentValues values = new ContentValues();
         values.put(DetailsTable.COLUMN_ID, id);
+        values.put(DetailsTable.COLUMN_FETCHING, convertDateToString(date));
+        values.put(DetailsTable.COLUMN_AGE, convertDateToString(date));
         values.put(DetailsTable.COLUMN_DETAILS, detail);
 
         database.insert(DetailsTable.TABLE_DETAILS, null, values);
         close();
     }
 
-    public String getDetailsFromId(String id) {
-        String details = null;
+    public void createDetail(String id, Date date, String parent, String detail) {
+        open();
+        ContentValues values = new ContentValues();
+        values.put(DetailsTable.COLUMN_ID, id);
+        values.put(DetailsTable.COLUMN_FETCHING, convertDateToString(date));
+        values.put(DetailsTable.COLUMN_AGE, convertDateToString(date));
+        values.put(DetailsTable.COLUMN_PARENT, parent);
+        values.put(DetailsTable.COLUMN_DETAILS, detail);
 
+        database.insert(DetailsTable.TABLE_DETAILS, null, values);
+        close();
+    }
+
+    private String convertDateToString(Date date) {
+        DateFormat df = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        return df.format(date);
+    }
+
+    public boolean isDetailInDB(String id) {
         List<Details> detailsList = getAllDetails();
+
         for (Details d : detailsList) {
-            try {
-                JSONObject jsonObject = new JSONObject(d.getDetail());
-                if (id.equals(jsonObject.getString("parent"))) {
-                    details = d.getDetail();
-                    break;
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
+            if (d.getId().equals(id)) {
+                return true;
             }
         }
-        return details;
+        return false;
+    }
+
+    public boolean isDetailAgeExpired(String id) {
+        List<Details> detailsList = getAllDetails();
+
+        for (Details d : detailsList) {
+            if (d.getId().equals(id)) {
+                if (isSameDay(d.getAge())) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    public boolean notCurrentlyFetchingDetail(String id) {
+        List<Details> detailsList = getAllDetails();
+
+        for (Details d : detailsList) {
+            if (d.getId().equals(id)) {
+                if (isTimestampExpired(d.getFetching())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean isTimestampExpired(Date d) {
+        long julianDayNumber1 = new Date().getTime() / Constants.MILLIS_PER_DAY;
+        long julianDayNumber2 = d.getTime() / Constants.MILLIS_PER_DAY;
+
+        long seconds = (julianDayNumber1 - julianDayNumber2)/1000;
+
+        return seconds > 30 ? true : false;
+    }
+
+    private boolean isSameDay(Date d) {
+        long julianDayNumber1 = new Date().getTime() / Constants.MILLIS_PER_DAY;
+        long julianDayNumber2 = d.getTime() / Constants.MILLIS_PER_DAY;
+
+        // If they now are equal then it is the same day.
+        return julianDayNumber1 == julianDayNumber2;
     }
 
     public Details getChildDetailFromId(String id) {
@@ -68,22 +123,12 @@ public class DetailsDataSource {
         List<Details> detailsList = getAllDetails();
         try {
             for (Details d : detailsList) {
-                JSONObject jsonObject = new JSONObject(d.getDetail());
-                //if (jsonObject.isNull("value")) {
+                JSONObject jsonObject = d.getDetail();
                 if (!jsonObject.isNull("parent")) {
                     if (id.equals(jsonObject.getString("parent"))) {
                         detail = d;
-                       // break;
                     }
                 }
-
-               // } else {
-               //     JSONObject value = jsonObject.getJSONObject("value");
-               //     if (id.equals(value.getString("parent"))) {
-               //         detail = d;
-               //         break;
-                //    }
-              //  }
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -91,99 +136,40 @@ public class DetailsDataSource {
         return detail;
     }
 
-//    public int getBeaconResponse(String id) {
-//        open();
-//
-//        int response = 0;
-//
-//        String[] result_column = new String[] {ServiceTable.COLUMN_ID, ServiceTable.COLUMN_RESPONSE};
-//        String where = ServiceTable.COLUMN_ID + "=" + id;
-//
-//        String whereArgs[] = null;
-//        String groupBy = null;
-//        String having = null;
-//        String order = null;
-//
-//        Cursor cursor = database.query(ServiceTable.TABLE_SERVICE, result_column, where, whereArgs, groupBy, having, order);
-//        int RESPONSE_INDEX = cursor.getColumnIndexOrThrow(ServiceTable.COLUMN_RESPONSE);
-//        while (cursor.moveToNext()) {
-//            response = cursor.getInt(RESPONSE_INDEX);
-//        }
-//        cursor.close();
-//        return response;
-//    }
+    public void setYesResponse(String id) {
+        open();
 
-//    public void setYesResponse(String id) {
-//        open();
-//
-//        ContentValues values = new ContentValues();
-//
-//        //if (getBeaconResponse(uuid) == 0) {
-//            values.put(DetailsTable.COLUMN_RESPONSE, 1);
-//        //} else {
-//        //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
-//       // }
-//
-//        String where = DetailsTable.COLUMN_ID + "=?";
-//        String whereArgs[] = new String[] {id};
-//
-//        try {
-//            database.update(DetailsTable.TABLE_DETAILS, values, where, whereArgs);
-//        } catch (SQLException e) {
-//            Log.e("Error", e.toString());
-//        }
-//
-//        database.close();
-//    }
-//
-//    public void setNoResponse(String id) {
-//        open();
-//
-//        ContentValues values = new ContentValues();
-//
-//        //if (getBeaconResponse(uuid) == 0) {
-//        values.put(DetailsTable.COLUMN_RESPONSE, 0);
-//        //} else {
-//        //    values.put(ServiceTable.COLUMN_RESPOMSE, 0);
-//        // }
-//
-//        String where = DetailsTable.COLUMN_ID + "=?";
-//        String whereArgs[] = new String[] {id};
-//
-//        try {
-//            database.update(DetailsTable.TABLE_DETAILS, values, where, whereArgs);
-//        } catch (SQLException e) {
-//            Log.e("Error", e.toString());
-//        }
-//        database.close();
-//    }
+        ContentValues values = new ContentValues();
+        values.put(DetailsTable.COLUMN_RESPONSE, 1);
 
-    public boolean isDetailInDB(String id) {
-        List<Details> detailsList = getAllDetails();
-        boolean flag = false;
+        String where = DetailsTable.COLUMN_ID + "=?";
+        String whereArgs[] = new String[] {id};
 
-        for (Details d : detailsList) {
-            try {
-               // JSONObject jsonObject = new JSONObject(d.getDetail());
-                //if (jsonObject.isNull("value")) {
-                 //   if (id.equals(jsonObject.getString("_id"))) {
-                if (id.equals(d.getId())) {
-                    flag = true;
-                    break;
-                }
-//                } else {
-//                    JSONObject value = jsonObject.getJSONObject("value");
-//                    if (id.equals(value.getString("_id"))) {
-//                        flag = true;
-//                        break;
-//                    }
-//                }
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+        try {
+            database.update(DetailsTable.TABLE_DETAILS, values, where, whereArgs);
+        } catch (SQLException e) {
+            Log.e("Error", e.toString());
         }
-        return flag;
+
+        database.close();
+    }
+
+    public void setNoResponse(String id) {
+        open();
+
+        ContentValues values = new ContentValues();
+        values.put(DetailsTable.COLUMN_RESPONSE, 0);
+
+        String where = DetailsTable.COLUMN_ID + "=?";
+        String whereArgs[] = new String[] {id};
+
+        try {
+            database.update(DetailsTable.TABLE_DETAILS, values, where, whereArgs);
+        } catch (SQLException e) {
+            Log.e("Error", e.toString());
+        }
+
+        database.close();
     }
 
     public void deleteDetail(String id) {
@@ -200,7 +186,7 @@ public class DetailsDataSource {
 
         cursor.moveToFirst();
         while (!cursor.isAfterLast()) {
-            Details detail = cursorToBeacon(cursor);
+            Details detail = cursorToDetail(cursor);
             details.add(detail);
             cursor.moveToNext();
         }
@@ -210,10 +196,29 @@ public class DetailsDataSource {
         return details;
     }
 
-    private Details cursorToBeacon(Cursor cursor) {
+    private Details cursorToDetail(Cursor cursor) {
         Details detail = new Details();
         detail.setId(cursor.getString(0));
-        detail.setDetail(cursor.getString(1));
+        detail.setFetching(stringToDate(cursor.getString(1)));
+        detail.setAge(stringToDate(cursor.getString(2)));
+        detail.setParent(cursor.getString(3));
+        try {
+            detail.setDetail(new JSONObject(cursor.getString(4)));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        detail.setResponse(cursor.getInt(5));
         return detail;
+    }
+
+    private Date stringToDate(String strDate) {
+        Date date = null;
+        DateFormat format = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss", Locale.ENGLISH);
+        try {
+            date = format.parse(strDate);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return date;
     }
 }

@@ -1,43 +1,20 @@
 package keystone_technologies.com.readingthecity;
 
-import android.app.Activity;
 import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
 import android.os.IBinder;
 import android.os.RemoteException;
-import android.text.Layout;
-import android.util.Log;
-import android.view.View;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.RemoteViews;
 import android.widget.Toast;
-
 import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 public class BeaconTrackingService extends Service {
 
     private static BeaconManager beaconManager;
-    private BeaconDataSource beaconDataSource;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -46,7 +23,6 @@ public class BeaconTrackingService extends Service {
 
     @Override
     public void onCreate() {
-        beaconDataSource = new BeaconDataSource(this);
         beaconManager = new BeaconManager(this);
 
         startForeground(Constants.SERVICE_NOTIFICATION_ID, new Notification.Builder(this)
@@ -55,10 +31,6 @@ public class BeaconTrackingService extends Service {
                 .setContentTitle(getString(R.string.app_name))
                 .build());
     }
-
-
-
-
 
     public static void stopTrackingListener() {
         try {
@@ -94,63 +66,96 @@ public class BeaconTrackingService extends Service {
 
                     @Override
                     public void onBeaconsDiscovered(Region region, final List<Beacon> beacons) {
+                        BeaconsDataSource beaconsDataSource = new BeaconsDataSource(getApplicationContext());
                         if (!beacons.isEmpty()) {
-                            if (beacons.size() > 1) {
-                                if (beacons.get(0).getRssi() - beacons.get(1).getRssi() >= 5) {
-                                    if (beaconDataSource.isBeaconNotInDB(beacons.get(0))) {
-                                         beaconDataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
-                                              new Date().toString());
-                                        new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
-                                    } else {
-                                        if (isBeaconOld(beacons.get(0))) {
-                                            beaconDataSource.deleteBeacon(beacons.get(0));
-                                            beaconDataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
-                                                    new Date().toString());
-                                            new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
-                                        } else {
-                                            // get beacon from DB
-                                            try {
-                                              //  String id = beaconDataSource.getIdFromDB(beacons.get(0));
-                                              //  if (id != null) {
-                                               //     JSONObject jsonObject = new JSONObject
-                                               //             (detailsDataSource.getDetailsFromId(id));
-                                               //     new GetBeaconDetails(jsonObject.get("parent").toString(),
-                                                //            context).execute();
-                                             //   } else {
-                                              //      beaconDataSource.deleteBeacon(beacons.get(0));
-                                              //  }
-                                            } catch (Exception ex) {
-                                                ex.printStackTrace();
+                            int notificationId = NotificationOutput.getNotificationId();
+                            if (notificationId != 0) {
+                                BeaconDevice beacon = beaconsDataSource.getBeacon(notificationId);
+                                if (beacons.size() > 1) {
+                                    if (!match(beacons.get(0), beacon)) {
+                                        if (beacons.get(0).getRssi() - beacons.get(1).getRssi() >= 5) {
+                                            if (beaconsDataSource.isBeaconInDB(notificationId)) {
+                                                if (beaconsDataSource.isBeaconAgeExpired(notificationId)) {
+                                                    if (beaconsDataSource.notCurrentlyFetchingBeacon(notificationId)) {
+                                                        beaconsDataSource.deleteBeacon(notificationId);
+                                                        beaconsDataSource.createBeacon(beacons.get(0).getMajor(),
+                                                                beacons.get(0).getMinor(), notificationId, new Date());
+                                                        new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
+                                                    }
+                                                } else {
+                                                    // get beacon from DB and pass on
+                                                    new GetBeaconDetails(beaconsDataSource.getBeaconFromDB(notificationId).getParent(),
+                                                            getApplicationContext()).execute();
+                                                }
+                                            } else {
+                                                beaconsDataSource.createBeacon(beacons.get(0).getMajor(),
+                                                        beacons.get(0).getMinor(), notificationId, new Date());
+                                                new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                             }
+                                        }
+                                    }
+                                } else {
+                                    if (!match(beacons.get(0), beacon)) {
+                                        if (beaconsDataSource.isBeaconInDB(notificationId)) {
+                                            if (beaconsDataSource.isBeaconAgeExpired(notificationId)) {
+                                                if (beaconsDataSource.notCurrentlyFetchingBeacon(notificationId)) {
+                                                    beaconsDataSource.deleteBeacon(notificationId);
+                                                    beaconsDataSource.createBeacon(beacons.get(0).getMajor(),
+                                                            beacons.get(0).getMinor(), notificationId, new Date());
+                                                    new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
+                                                }
+                                            } else {
+                                                new GetBeaconDetails(beaconsDataSource.getBeaconFromDB(notificationId).getParent(),
+                                                        getApplicationContext()).execute();
+                                            }
+                                        } else {
+                                            beaconsDataSource.createBeacon(beacons.get(0).getMajor(),
+                                                    beacons.get(0).getMinor(), notificationId, new Date());
+                                            new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                         }
                                     }
                                 }
                             } else {
-                                if (beaconDataSource.isBeaconNotInDB(beacons.get(0))) {
-                                    beaconDataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
-                                            new Date().toString());
-                                    new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
-                                } else {
-                                    if (isBeaconOld(beacons.get(0))) {
-                                        beaconDataSource.deleteBeacon(beacons.get(0));
-                                        beaconDataSource.createBeacon(beacons.get(0).getMajor(), beacons.get(0).getMinor(),
-                                                new Date().toString());
-                                        new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
-                                    } else {
-                                        // get beacon from DB
-                                        try {
-//                                            String id = beaconDataSource.getIdFromDB(beacons.get(0));
-//                                            if (id != null) {
-//                                                JSONObject jsonObject = new JSONObject
-//                                                        (detailsDataSource.getDetailsFromId(id));
-//                                                new GetBeaconDetails(jsonObject.get("parent").toString(),
-//                                                        context).execute();
-//                                            } else {
-//                                                beaconDataSource.deleteBeacon(beacons.get(0));
-//                                            }
-                                        } catch (Exception ex) {
-                                            ex.printStackTrace();
+                                notificationId = Integer
+                                        .parseInt(String.valueOf(beacons.get(0).getMajor()) +
+                                                String.valueOf(beacons.get(0).getMinor()));
+                                if (beacons.size() > 1) {
+                                    if (beacons.get(0).getRssi() - beacons.get(1).getRssi() >= 5) {
+                                        if (beaconsDataSource.isBeaconInDB(notificationId)) {
+                                            if (beaconsDataSource.isBeaconAgeExpired(notificationId)) {
+                                                if (beaconsDataSource.notCurrentlyFetchingBeacon(notificationId)) {
+                                                    beaconsDataSource.deleteBeacon(notificationId);
+                                                    beaconsDataSource.createBeacon(beacons.get(0).getMajor(),
+                                                            beacons.get(0).getMinor(), notificationId, new Date());
+                                                    new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
+                                                }
+                                            } else {
+                                                new GetBeaconDetails(beaconsDataSource.getBeaconFromDB(notificationId).getParent(),
+                                                        getApplicationContext()).execute();
+                                            }
+                                        } else {
+                                            beaconsDataSource.createBeacon(beacons.get(0).getMajor(),
+                                                    beacons.get(0).getMinor(), notificationId, new Date());
+                                            new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                         }
+                                    }
+                                } else {
+                                    if (beaconsDataSource.isBeaconInDB(notificationId)) {
+                                        if (beaconsDataSource.isBeaconAgeExpired(notificationId)) {
+                                            if (beaconsDataSource.notCurrentlyFetchingBeacon(notificationId)) {
+                                                beaconsDataSource.deleteBeacon(notificationId);
+                                                beaconsDataSource.createBeacon(beacons.get(0).getMajor(),
+                                                        beacons.get(0).getMinor(), notificationId, new Date());
+                                                new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
+                                            }
+                                        } else {
+                                            new GetBeaconDetails(beaconsDataSource.getBeaconFromDB(notificationId).getParent(),
+                                                    getApplicationContext()).execute();
+                                        }
+                                    } else {
+                                        beaconsDataSource.createBeacon(beacons.get(0).getMajor(),
+                                                beacons.get(0).getMinor(), notificationId, new Date());
+                                        new GetBeaconInfo(beacons.get(0), getApplicationContext()).execute();
                                     }
                                 }
                             }
@@ -162,32 +167,12 @@ public class BeaconTrackingService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private boolean isBeaconOld(Beacon beacon) {
-
-        List<Device> beaconList = beaconDataSource.getAllBeacons();
-        boolean flag = false;
-
-        for (Device b : beaconList) {
-            if (b.getMajor() == beacon.getMajor()) {
-                if (b.getMinor() == beacon.getMinor()) {
-                    if (isSameDay(b.getDate(), new Date())) {
-                        flag = false;
-                        break;
-                    } else {
-                        flag = true;
-                        break;
-                    }
-                }
+    private boolean match(Beacon b, BeaconDevice bd) {
+        if (b.getMajor() == bd.getMajor()) {
+            if (b.getMinor() == bd.getMinor()) {
+                return true;
             }
         }
-        return flag;
-    }
-
-    public static boolean isSameDay(Date date1, Date date2) {
-        long julianDayNumber1 = date1.getTime() / Constants.MILLIS_PER_DAY;
-        long julianDayNumber2 = date2.getTime() / Constants.MILLIS_PER_DAY;
-
-        // If they now are equal then it is the same day.
-        return julianDayNumber1 == julianDayNumber2;
+        return false;
     }
 }

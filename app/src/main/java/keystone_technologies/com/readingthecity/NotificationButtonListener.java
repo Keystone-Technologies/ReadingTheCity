@@ -8,11 +8,9 @@ import android.widget.Toast;
 
 public class NotificationButtonListener extends BroadcastReceiver {
 
-    private static NotificationsDataSource notificationsDataSource;
-
     @Override
     public void onReceive(Context context, Intent intent) {
-        notificationsDataSource = new NotificationsDataSource(context);
+        DetailsDataSource detailsDataSource = new DetailsDataSource(context);
         String action = intent.getAction();
         DetailsDataSource detailDataSource = new DetailsDataSource(context);
         String id = intent.getExtras().getString("id");
@@ -20,16 +18,16 @@ public class NotificationButtonListener extends BroadcastReceiver {
 
         if (action.equals("Yes")) {
             Toast.makeText(context, "YES BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
-            notificationsDataSource.createNotification(id, name, 1);
+            detailsDataSource.setYesResponse(id);
             cancelNotification(context);
             Details detail = detailDataSource.getChildDetailFromId(id);
             if (detail != null) {
-                GetBeaconDetails db = new GetBeaconDetails();
-                db.postNotification(detail);
+                NotificationOutput output = new NotificationOutput();
+                output.postNotification(detail, context);
             }
         } else {
             Toast.makeText(context, "NO BUTTON PRESSED!", Toast.LENGTH_SHORT).show();
-            notificationsDataSource.createNotification(id, name, 0);
+            detailsDataSource.setNoResponse(id);
             cancelNotification(context);
         }
     }
@@ -37,6 +35,6 @@ public class NotificationButtonListener extends BroadcastReceiver {
     public void cancelNotification(Context ctx) {
         String ns = Context.NOTIFICATION_SERVICE;
         NotificationManager notificationManager = (NotificationManager) ctx.getSystemService(ns);
-        notificationManager.cancel(Constants.BEACON_NOTIFICATION_ID);
+        notificationManager.cancel(NotificationOutput.getNotificationId());
     }
 }

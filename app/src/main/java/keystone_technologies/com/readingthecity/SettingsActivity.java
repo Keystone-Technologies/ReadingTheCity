@@ -9,35 +9,49 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.Switch;
+import org.json.JSONArray;
 import org.json.JSONObject;
-
+import java.util.ArrayList;
 import java.util.List;
 
 
 public class SettingsActivity extends ListActivity {
 
-    private static NotificationsDataSource notificationsDataSource;
+    private static DetailsDataSource detailsDataSource;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
 
-        notificationsDataSource = new NotificationsDataSource(this);
-        List<Posts> notificationList = notificationsDataSource.getAllPosts();
+        detailsDataSource = new DetailsDataSource(this);
+        List<Details> detailsList = detailsDataSource.getAllDetails();
 
-        PostsAdapter adapter = new PostsAdapter(getBaseContext(), R.layout.detail_cell, notificationList);
+        DetailsAdapter adapter = new DetailsAdapter(getBaseContext(), R.layout.detail_cell, filterDetailList(detailsList));
         setListAdapter(adapter);
         adapter.notifyDataSetChanged();
     }
+
+    private List<Details> filterDetailList(List<Details> list) {
+        List<Details> settingsList = new ArrayList<Details>();
+
+        for (Details d : list) {
+            if (d.getResponse() == 0 || d.getResponse() == 1) {
+                settingsList.add(d);
+            }
+        }
+
+        return settingsList;
+    }
+
     // beacon adapter for array list
-    public static class PostsAdapter extends ArrayAdapter<Posts> {
+    public static class DetailsAdapter extends ArrayAdapter<Details> {
 
         // list of items
-        private static List<Posts> items;
+        private static List<Details> items;
         private Context context;
 
-        public PostsAdapter(Context context, int textViewResourceId, List<Posts> i) {
+        public DetailsAdapter(Context context, int textViewResourceId, List<Details> i) {
             super(context, textViewResourceId, i);
             items = i;
             this.context = context;
@@ -54,28 +68,63 @@ public class SettingsActivity extends ListActivity {
             Switch s = (Switch) v.findViewById(R.id.detailName);
 
             if (s != null) {
-                s.setText(items.get(position).getName());
-                s.setChecked(items.get(position).getResponse() != 0);
+                try {
+                    JSONObject jsonObject = items.get(position).getDetail();
+                    JSONArray jsonArray = jsonObject.getJSONArray("rows");
+
+                    JSONObject row = jsonArray.getJSONObject(0);
+                    JSONObject value = row.getJSONObject("value");
+
+                    s.setText(value.getString("name"));
+
+                    int flag = items.get(position).getResponse();
+                    if (flag == 0) {
+                        s.setChecked(false);
+                    } else {
+                        s.setChecked(true);
+                    }
+
                     s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                         @Override
                         public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
                             if(isChecked) {
                                 for (int i = 0; i < items.size(); i++) {
-                                    if (items.get(i).getName().contains(compoundButton.getText().toString())) {
-                                        notificationsDataSource.setYesResponse(items.get(i).getId());
-                                   }
+                                    if (getName(i, items).contains(compoundButton.getText().toString())) {
+                                        detailsDataSource.setYesResponse(items.get(i).getId());
+                                    }
                                 }
                             } else {
                                 for (int i = 0; i < items.size(); i++) {
-                                    if (items.get(i).getName().contains(compoundButton.getText().toString())) {
-                                        notificationsDataSource.setNoResponse(items.get(i).getId());
+                                    if (getName(i, items).contains(compoundButton.getText().toString())) {
+                                        detailsDataSource.setNoResponse(items.get(i).getId());
                                     }
                                 }
                             }
                         }
                     });
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
             return v;
         }
+    }
+
+    private static String getName(int i, List<Details> items) {
+        String name = null;
+
+        try {
+            JSONObject jsonObject = items.get(i).getDetail();
+            JSONArray jsonArray = jsonObject.getJSONArray("rows");
+
+            JSONObject row = jsonArray.getJSONObject(0);
+            JSONObject value = row.getJSONObject("value");
+            name = value.getString("name");
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return name;
     }
 }

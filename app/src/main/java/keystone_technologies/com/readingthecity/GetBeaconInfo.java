@@ -1,48 +1,24 @@
 package keystone_technologies.com.readingthecity;
 
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
-import android.view.View;
-
 import com.estimote.sdk.Beacon;
-
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.ParseException;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 
 public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
 
-    private static ProgressDialog dialog;
     private Context context;
-    private InputStream is = null;
     private StringBuilder sb = null;
     private Beacon beacon;
 
@@ -51,16 +27,6 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
         this.beacon = beacon;
         this.context = context;
     }
-
-//    @Override
-//    protected void onPreExecute() {
-//        super.onPreExecute();
-//        dialog = new ProgressDialog(context);
-//        dialog.setCancelable(true);
-//        dialog.setMessage("Loading...");
-//        dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-//        dialog.show();
-//    }
 
     @Override
     protected String doInBackground(Void... voids) {
@@ -78,10 +44,6 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
 
             HttpClient httpclient = new DefaultHttpClient();
             HttpGet httpget = new HttpGet(Constants.BEACON_QUERY + "[" + beacon.getMajor() + "," + beacon.getMinor() + "]");
-            //StringEntity se = new StringEntity(jsonObject.toString());
-            //se.setContentType("application/json;charset=UTF-8");
-            //se.setContentEncoding(new BasicHeader(HTTP.CONTENT_TYPE, "application/json;charset=UTF-8"));
-            //httppost.setEntity(se);
 
             HttpResponse response = httpclient.execute(httpget);
 
@@ -89,7 +51,7 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
                 InputStream is = response.getEntity().getContent();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(is, "iso-8859-1"), 8);
                 sb = new StringBuilder();
-                String line = null;
+                String line;
 
                 while ((line = reader.readLine()) != null) {
                     sb.append(line + "\n");
@@ -116,13 +78,11 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
             JSONObject row = jsonArray.getJSONObject(0);
             JSONObject value = row.getJSONObject("value");
 
-           // BeaconDataSource dataSource = new BeaconDataSource(context);
+            BeaconsDataSource beaconsDataSource = new BeaconsDataSource(context);
+            beaconsDataSource.setBeaconParent(beacon.getMajor(), beacon.getMinor(), value.get("parent").toString());
+            beaconsDataSource.setBeaconId(beacon.getMajor(), beacon.getMinor(), value.get("_id").toString());
+            new GetBeaconDetails(value.get("parent").toString(), context).execute();
 
-            if (value.has("parent")) {
-                new GetBeaconDetails(value.get("parent").toString(), context).execute();
-               // dataSource.createBeacon(value.getInt("major"), value.getInt("minor"),
-                  //      new Date().toString(), value.getString("_id"));
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
