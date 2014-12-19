@@ -1,0 +1,304 @@
+package Mojolicious::Command::reset;
+use Mojo::Base 'Mojolicious::Command';
+
+has description => 'Reset RTC environment';
+has usage => 'Do it';
+
+sub run {
+  my $self = shift;
+  RTC->new(config => $self->app->config)->reset;
+}
+
+####################################################################
+package Android::Notifier;
+use Mojo::Base -base;
+use Mojo::JSON 'j';
+use Mojo::Redis2;
+use Data::Dump;
+
+has redis => sub { Mojo::Redis2->new };
+
+has 'id';
+
+sub notification {
+  my $self = shift;
+  die "No id supplied\n" unless $self->id;
+  my $notification = $self->redis->get($self->id) or return;
+  j($notification);
+}
+
+sub notify {
+  my ($self, $obj) = @_;
+  die "No id supplied\n" unless $self->id;
+  return unless ref $obj eq 'HASH';
+  #int(rand(10)) or return;  # Randomly fail on posting to notification bar
+  my $notify = $self->redis->set($self->id => j($obj)) if ref $obj eq 'HASH';
+  defined $notify ? $obj : $notify;
+}
+
+sub clear {
+  my $self = shift;
+  die "No id supplied\n" unless $self->id;
+warn "!!!! CLEAR\n";
+  $self->redis->del($self->id);
+}
+
+####################################################################
+package Android::EstimoteSDK;
+use Mojo::Base -base;
+use Mojo::Redis2;
+use Data::Dump;
+
+has redis => sub { Mojo::Redis2->new };
+
+sub estimotes {
+  my $self = shift;
+  [map { Android::EstimoteSDK::Beacon->new(estimote => $self, _dekey($_)) } @{$self->redis->hkeys('estimote_beacons')}];
+}
+
+sub estimote {
+  my $self = shift;
+  my $key = join '_', @_;
+  ((grep { $_->key eq $key } @{$self->estimotes})[0]);
+}
+
+sub dump { Data::Dump::dump([map { $_->rssi } @{shift->estimotes}]) }
+
+sub _dekey { my ($major, $minor) = split /_/, shift; return (major => $major, minor => $minor) }
+
+####################################################################
+package Android::EstimoteSDK::Beacon;
+use Mojo::Base -base;
+
+has 'estimote';
+
+#sub new { my $self = shift->SUPER::new(@_); warn sprintf "New Estimote Beacon: %s\n", $self->key; $self; }
+
+has [qw/major minor/];
+sub key { join '_', $_[0]->major, $_[0]->minor }
+sub rssi {
+  my ($self, $rssi) = @_;
+  if ( $rssi ) {
+    defined $self->estimote->redis->hset(estimote_beacons => $self->key => $rssi) and $rssi;
+  } else {
+    $self->estimote->redis->hget(estimote_beacons => $self->key);
+  }
+}
+sub dump { my $self = shift; Data::Dump::dump({major => $self->major, minor => $self->minor, rssi => $self->rssi}) }
+
+####################################################################
+####################################################################
+
+package RTC;
+use Mojo::Base -base;
+use Mojo::Redis2;
+use Mojo::Log;
+use Mojo::UserAgent;	
+use Data::Dump;
+use DBI;
+
+has log => sub { Mojo::Log->new };
+has ua => sub { Mojo::UserAgent->new };
+has couchdb => 'http://db.xlxcd1.kit.cm:5984';
+has db => sub { DBI->connect("dbi:SQLite:dbname=sql.db","","",{AutoCommit=>1}) };
+has redis => sub { Mojo::Redis2->new };
+
+has 'config';
+has notifier => sub { Android::Notifier->new(id => 'rtc') };
+has beacon => sub { RTC::Beacon->new(rtc => shift) };
+
+sub create_tables {
+  my $self = shift;
+  $self->db->do("CREATE TABLE IF NOT EXISTS beacons (major integer, minor integer, fetching integer, age integer, parent text);");
+  $self->db->do("CREATE TABLE IF NOT EXISTS details (uuid text, fetching integer, age integer, parent text, json text, show integer);");
+}
+
+sub response {
+  my ($self, $uuid, $show) = @_;
+Data::Dump::dump({$uuid => $show});
+  $self->db->do("update details set age=strftime('%s', 'now'),show=? where uuid = ?", undef, $show, $uuid);
+}
+
+sub reset {
+  my $self = shift;
+  $self->db->do("delete from details");
+  $self->db->do("delete from beacons");
+  $self->redis->del('estimote_beacons');
+  foreach ( keys %{$self->config->{beacons}} ) {
+    $self->log->info(sprintf "Adding beacon $_ => %s", $self->config->{beacons}->{$_});
+    $self->redis->hset(estimote_beacons => $_ => $self->config->{beacons}->{$_});
+  }
+  $self->notifier->clear;
+}
+
+#sub dump { Data::Dump::dump({major => $_[0]->major, minor => $_[0]->minor, rssi => $_[0]->rssi}) }
+#sub dumplog { $_[0]->rtc->log->debug($_[0]->dump); $_[0] }
+
+####################################################################
+package RTC::Beacon;
+use Mojo::Base -base;
+
+has 'rtc';
+has estimotesdk => sub { Android::EstimoteSDK->new };
+has details => sub { {} };
+
+sub options {
+  my $self = shift;
+  my @options = ();
+  my $notification = $self->rtc->notifier->notification;
+  my @estimotes = sort { $a->rssi <=> $b->rssi } @{$self->estimotesdk->estimotes};
+  my $current = join '_', $notification->{major}, $notification->{minor} if $notification;
+  $current = $current && $self->details->{$current} && ref $self->details->{$current}->json eq 'HASH' ? $self->details->{$current} : undef;
+warn sprintf "Current: %s -> %s (%s)\n", $self->details->{$current}->estimote->rssi, $self->details->{$current}->json->{_id}, $notification->{_id} if $current && $self->details->{$current};
+  foreach my $estimote ( @estimotes ) {
+    $self->details->{$estimote->key} ||= RTC::Details->new(rtc => $self->rtc, estimote => $estimote);
+    $self->details->{$estimote->key}->pull_details;
+    next unless ref $self->details->{$estimote->key}->json eq 'HASH';
+    next if defined $self->details->{$estimote->key}->json->{show};
+    next if $current && abs($estimote->rssi) <= abs($current->estimote->rssi) + 5;
+    next if $current && $self->details->{$estimote->key}->json->{_id} eq $current->json->{_id};
+    push @options, $self->details->{$estimote->key};
+  }
+  delete $self->details->{$_} foreach grep { time() - $self->details->{$_}->time > 86400 } keys %{$self->details};
+Data::Dump::dump({available => [map { $_->rssi } @estimotes]}) if @options;
+Data::Dump::dump({options => [map { $_->estimote->rssi } @options]}) if @options;
+  @options;
+};
+
+sub dump { Data::Dump::dump({rtc_beacon_dump => [map { $_->rssi } @{shift->estimotesdk->estimotes}]}) }
+
+####################################################################
+package RTC::Details;
+use Mojo::Base -base;
+use Mojo::JSON 'j';
+
+has 'rtc';
+has 'estimote';
+
+has 'json';
+has time => sub { time() };
+
+sub pull_details {
+  my ($self, $me, $child) = @_;
+  if ( $me ) {
+    my ($rows, $_child, $fetching, $age, $parent, $json, $show, $pjson, $pshow) = $self->selectrow_array("select d0.uuid as cuuid,d1.fetching as fetching,d1.age as age,d1.parent as parent,d1.json as json,d1.show as show,d2.json as pjson,d2.show as pshow from details d1 left join details d2 on d1.parent=d2.uuid left join details d0 on d0.parent=d1.uuid where d1.uuid = ? limit 1", undef, $me);
+    $self->do('insert into details (uuid) values (?)', undef, $me) unless $rows;
+    return $self->json(undef) if (defined $show && !$show) || (defined $pshow && !$pshow);
+    return $self->json(j($json)) if defined $fetching && time() - $fetching < 7;
+    return $self->pull_details($parent, $me) if defined $parent && not defined $pshow;
+    if ( (not defined $json) || ($age && time() - $age > 86400) ) {
+      warn "Fetching...\n";
+      $self->do("update details set fetching = strftime('%s', 'now') where uuid = ?", undef, $me);
+      $self->rtc->ua->get(sprintf('%s/rtc/_design/lookup/_view/details?key="%s"', $self->rtc->couchdb, $me) => sub {
+        my ($ua, $tx) = @_;
+        my $json = $tx->res->json->{rows}->[0]->{value};
+        $json->{child} = $child;
+        $self->do("update details set fetching=null,age=strftime('%s', 'now'),parent=?,json=?,show=null where uuid = ?", undef, $json->{parent}, j($json), $me);
+      });
+    }
+    return $self->json(j($json));
+  } elsif ( my @mm = ($self->estimote->major, $self->estimote->minor) ) {
+    $self->time(time());
+    my ($rows, $fetching, $age, $parent) = $self->selectrow_array('select fetching,age,parent from beacons where major = ? and minor = ? limit 1', undef, @mm);
+    $self->do('insert into beacons (major, minor) values (?, ?)', undef, @mm) unless $rows;
+    return $self if defined $fetching && time() - $fetching < 7;
+    return $self->pull_details($parent, undef) if $parent && defined $age && time() - $age < 86400;
+    warn "Fetching...\n";
+    $self->do("update beacons set fetching = strftime('%s', 'now') where major = ? and minor = ?", undef, @mm);
+    $self->rtc->ua->get(sprintf('%s/rtc/_design/lookup/_view/beacon?key=[%s,%s]', $self->rtc->couchdb, @mm) => sub {
+      my ($ua, $tx) = @_;
+      my $json = $tx->res->json->{rows}->[0]->{value};
+      $self->do("update beacons set fetching=null,age=strftime('%s', 'now'),parent=? where major = ? and minor = ?", undef, $json->{parent}, @mm);
+    });
+  }
+  undef;
+}
+
+sub do { shift->rtc->db->do(@_) }
+sub selectrow_array {
+  my $self = shift;
+  my ($statement, $attr, @bind_values) = @_;
+  my $sth = $self->rtc->db->prepare($statement, $attr||{}) or return undef;
+  $sth->execute(@bind_values) or return undef;
+  my @row = $sth->fetchrow_array;
+  my $rows = $sth->rows;
+  #$sth->finish;
+  $rows, @row;
+}
+
+sub dump { Data::Dump::dump(shift->beacons) }
+
+####################################################################
+####################################################################
+package main;
+use Mojolicious::Lite;
+
+plugin 'Config';
+
+my $rtc = RTC->new(config => app->config);
+
+get '/' => 'index';
+
+post '/rssi/:beacon/:rssi' => {rssi => undef} => sub {
+  my $c = shift;
+  if ( ($c->param('beacon') =~ /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-(\d+)-(\d+)$/) ) {
+    $c->render(json => {major => $2, minor => $3, rssi => $rtc->beacon->estimotesdk->estimote($2, $3)->rssi($c->param('rssi'))});
+  } else {
+    $c->render(text => '', status => 401);
+  }
+};
+
+#post '/show/:uuid/:show' => [show => [(0,1,undef)]] => {show => undef} => sub {
+post '/response/:uuid/:show' => {show => undef} => sub {
+  my $c = shift;
+  $rtc->response($c->param('uuid') => $c->param('show'));
+  $rtc->notifier->clear;
+  $c->render(text => $c->param('uuid') . ' => ' . ($c->param('show')?'Yes':'No'));
+};
+
+del '/reset' => sub { shift->render(text => $rtc->reset) };
+
+websocket '/notification' => sub {
+  my $c = shift;
+  my $loop;
+  $c->on(frame => sub {
+    my ($ws, $frame) = @_;
+# How to kill this timer when the websocket dies??
+    $loop = Mojo::IOLoop->recurring(1 => sub {
+      $ws->send({json => $rtc->notifier->notification||{}}) if $ws->can('tx') && $ws->tx && $ws->tx->can('is_websocket') && $ws->tx->is_websocket;
+    });
+  });
+};
+
+$rtc->create_tables;
+$rtc->beacon->dump;
+
+Mojo::IOLoop->recurring(0.5 => sub {
+  if ( my @options = $rtc->beacon->options ) {
+    my $obj = $rtc->notifier->notification;
+    no warnings;
+    warn sprintf "Current Notification: %s(%s) => %s (%s|%s|%s): %s\n", join('_', $obj->{major}, $obj->{minor}), $obj->{rssi}, $obj->{name}, $obj->{child}, $obj->{_id}, $obj->{parent}, ($obj->{child}?'':$obj->{url}->[0]) if keys %$obj;
+    #warn sprintf "Checking details for %s -> %s | %s %s %s | %s %s %s\n", $self->estimote->rssi, $_child, $me, j($json||'{}')->{name}, $show, $parent, j($pjson||'{}')->{name}, $pshow;
+    foreach ( @options ) {
+      if ( my $obj = $rtc->notifier->notify({major => $_->estimote->major, minor => $_->estimote->minor, rssi => $_->estimote->rssi, %{$_->json}}) ) {
+        no warnings;
+        warn sprintf "New Notification: %s(%s) => %s (%s|%s|%s): %s\n", join('_', $obj->{major}, $obj->{minor}), $obj->{rssi}, $obj->{name}, $obj->{child}, $obj->{_id}, $obj->{parent}, ($obj->{child}?'':$obj->{url}->[0]);
+        last;
+      } else {
+        warn "Not Posted!\n";
+      }
+    }
+  } else {
+    #warn "No change\n";
+    return;
+  }
+});
+
+app->start;
+
+__DATA__
+
+@@ notification.html.ep
+% if ( $n->{json} ) {
+  <a href="<%= $n->{json}->{url}->[0] %>"><%= $n->{json}->{name} %></a>
+% }

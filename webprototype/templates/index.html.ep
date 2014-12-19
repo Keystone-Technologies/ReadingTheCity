@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Reading the City</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <link rel="stylesheet" href="css/normalize.css" type="text/css" media="screen"/>
+        <link rel="stylesheet" href="css/style.css" type="text/css" media="screen"/>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
+        <script src="http://code.jquery.com/jquery-1.10.1.js"></script>
+        <script src="http://code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+        <style>
+             div#NotificationBar { display:none; }
+             .strongest { background-color: lightgray; }
+             .hide { color:gray }
+        </style>
+        <script>
+            $(function(){
+                function createWebSocket () {
+                  var ws = new WebSocket('<%= url_for('notification')->to_abs %>');
+                  ws.onopen = function (event) {
+                    console.log("Web Socket Open!");
+                    ws.send(1);
+                  };
+                  ws.onmessage = function (event) {
+                    notify(JSON.parse(event.data));
+                  };
+                  ws.onerror = function () {
+                    console.log("Web Socket Error!");
+                  };
+                  ws.onclose = function () {
+                    console.log("Web Socket Close!");
+                    setTimeout(function () { createWebSocket(); }, 2*1000);
+                  };
+                };
+                function notify (json) {
+                  if ( json._id ) {
+                    $('div#NotificationBar').attr("uuid", json._id);
+                    if ( json.thumbnail ) {
+                      $('div#NotificationBar img#thumbnail').attr("src", json.thumbnail);
+                      $('div#NotificationBar img#thumbnail').show();
+                    } else {
+                      $('div#NotificationBar img#thumbnail').hide();
+                    }
+                    //$('div#NotificationBar span#id').html(json.major + ',' + json.minor);
+                    $('div#NotificationBar a#url').attr("href", json.url).html(json.name);
+                    $('div#NotificationBar span#description').html(json.description+"<p>"+json._id);
+                    if ( json.child == null )
+                      $('div#NotificationBar td#show').hide();
+                    else
+                      $('div#NotificationBar td#show').show();
+                    $('.Beacon').removeClass("strongest");
+                    $('#b9407f30-f5f8-466e-aff9-25556b57fe6d-'+json.major+'-'+json.minor).addClass("strongest");
+                    $('div#NotificationBar').show();
+                  } else {
+                    $('div#NotificationBar').hide();
+                  }
+                }
+                function setup_sliders () {
+                  $(".Beacon > .FloatLeft > span.slider").each(function(){
+                    var beacon = $(this).parent().parent();
+                    var beaconuuid = $(beacon).attr('id');
+                    var slider = $(this).empty().slider({
+                        value: 0,
+                        range: "min",
+                        animate: true,
+                        orientation: "vertical",
+                        slide: function (e, ui) {
+                          $(beacon).find("span.rssi").html(ui.value*-1);
+                        },
+                        stop: function (e, ui) {
+                          $.post("/rssi/"+beaconuuid+"/"+(ui.value*-1), function(data){
+                            $(beacon).find("span.rssi").html(data.rssi);
+                          });
+                        }
+                    });
+                    $.post("/rssi/"+beaconuuid, function(data){
+                      $(beacon).find("span.major").html(data.major);
+                      $(beacon).find("span.minor").html(data.minor);
+                      $(beacon).find("span.rssi").html(data.rssi);
+                      $(slider).slider("value", -1*data.rssi);
+                    });
+                  });
+                }
+                $('div#NotificationBar td#show img#yes').click(function(){
+                  var uuid = $('div#NotificationBar').attr("uuid");
+                  if ( uuid )
+                    $.post("/response/"+uuid+"/1");
+                });
+                $('div#NotificationBar td#show img#no').click(function(){
+                  var uuid = $('div#NotificationBar').attr("uuid");
+                  if ( uuid )
+                    $.post("/response/"+uuid+"/0");
+                });
+                $('div#reset').click(function(){
+                  $.ajax({type:"DELETE",url:"/reset"});
+                  setup_sliders();
+                });
+                setup_sliders();
+                createWebSocket();
+            });
+        </script>
+    </head>
+    <body>
+
+        <div id="Wrapper">
+
+            <div id="reset">Reset</div>
+            <div id="NotificationBar">
+              <table align="center">
+                <tr>
+                  <td id="image"><img id="thumbnail" style="cell-spacing: 5px"/></td>
+                  <td id="details" style="text-align: left;cell-spacing: 5px">
+                    <p><!-- <span id="id"></span>: --><a id="url" href="#"></a></p>
+                    <p><span id="description"></span></p>
+                  </td>
+                  <td id="show" style="cell-spacing: 5px">
+                    <p><img id="yes" src="http://www.iconsdb.com/icons/download/black/check-mark-8-48.png" /></p>
+                    <p><img id="no" src="http://www.iconsdb.com/icons/download/black/x-mark-5-48.png" /></p>
+                  </td>
+                </tr>
+              </table>
+            </div>
+
+            <div id="Input">
+                <div class="Beacon" id="b9407f30-f5f8-466e-aff9-25556b57fe6d-19665-6283">
+                     <div class="FloatLeft"><span class="slider"></span></div>
+                     <div class="FloatRight">
+                         <p><span class="name">Michaelangelo's Sistine Chapel</span></p>
+                         <p>Major ID: <span class="major"></span><br/>Minor ID: <span class="minor"></span></p>
+                         <p>Signal Strength: <span class="rssi"></span> db</p>
+                     </div>
+                </div>
+                <div class="Beacon" id="b9407f30-f5f8-466e-aff9-25556b57fe6d-6033-57725">
+                     <div class="FloatLeft"><span class="slider"></span></div>
+                     <div class="FloatRight">
+                         <p><span class="name">Michaelangelo's David</span></p>
+                         <p>Major ID: <span class="major"></span><br/>Minor ID: <span class="minor"></span></p>
+                         <p>Signal Strength: <span class="rssi"></span> db</p>
+                     </div>
+                </div>
+                <div class="Beacon" id="b9407f30-f5f8-466e-aff9-25556b57fe6d-14365-33884">
+                     <div class="FloatLeft"><span class="slider"></span></div>
+                     <div class="FloatRight">
+                         <p><span class="name">Leonardo da Vinci's Mona Lisa</span></p>
+                         <p>Major ID: <span class="major"></span><br/>Minor ID: <span class="minor"></span></p>
+                         <p>Signal Strength: <span class="rssi"></span> db</p>
+                     </div>
+                </div>
+                <div class="Beacon" id="b9407f30-f5f8-466e-aff9-25556b57fe6d-43891-24830">
+                     <div class="FloatLeft"><span class="slider"></span></div>
+                     <div class="FloatRight">
+                         <p><span class="name">Leonardo da Vinci's Last Supper</span></p>
+                         <p>Major ID: <span class="major"></span><br/>Minor ID: <span class="minor"></span></p>
+                         <p>Signal Strength: <span class="rssi"></span> db</p>
+                     </div>
+                </div>
+            </div>
+
+        </div>
+
+    </body>
+</html>
