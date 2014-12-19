@@ -124,7 +124,7 @@ public class BeaconsDataSource {
         List<BeaconDevice> beacons = getAllBeacons();
 
         for (BeaconDevice bd : beacons) {
-            if (bd.getId().equals(id)) {
+            if (bd.getParent().equals(id)) {
                 return bd.getNotificationId();
             }
         }

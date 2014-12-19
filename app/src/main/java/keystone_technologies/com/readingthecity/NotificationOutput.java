@@ -18,7 +18,7 @@ import java.util.List;
 
 public class NotificationOutput {
 
-    private static int notificationId = 0;
+    private static int notificationId = 99;
     private BeaconsDataSource beaconsDataSource;
 
     public NotificationOutput() {

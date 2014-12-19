@@ -69,7 +69,7 @@ public class BeaconTrackingService extends Service {
                         BeaconsDataSource beaconsDataSource = new BeaconsDataSource(getApplicationContext());
                         if (!beacons.isEmpty()) {
                             int notificationId = NotificationOutput.getNotificationId();
-                            if (notificationId != 0) {
+                            if (notificationId != 99) {
                                 BeaconDevice beacon = beaconsDataSource.getBeacon(notificationId);
                                 if (beacons.size() > 1) {
                                     if (!match(beacons.get(0), beacon)) {
