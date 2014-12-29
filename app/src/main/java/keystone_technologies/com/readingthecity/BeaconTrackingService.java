@@ -117,8 +117,7 @@ public class BeaconTrackingService extends Service {
                                 }
                             } else {
                                 notificationId = Integer
-                                        .parseInt(String.valueOf(beacons.get(0).getMajor()) +
-                                                String.valueOf(beacons.get(0).getMinor()));
+                                        .parseInt(String.valueOf(beacons.get(0).getMinor()));
                                 if (beacons.size() > 1) {
                                     if (beacons.get(0).getRssi() - beacons.get(1).getRssi() >= 5) {
                                         if (beaconsDataSource.isBeaconInDB(notificationId)) {

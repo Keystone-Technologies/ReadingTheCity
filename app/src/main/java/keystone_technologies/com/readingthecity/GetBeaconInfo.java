@@ -79,8 +79,8 @@ public class GetBeaconInfo extends AsyncTask<Void, Void, String> {
             JSONObject value = row.getJSONObject("value");
 
             BeaconsDataSource beaconsDataSource = new BeaconsDataSource(context);
-            beaconsDataSource.setBeaconParent(beacon.getMajor(), beacon.getMinor(), value.get("parent").toString());
-            beaconsDataSource.setBeaconId(beacon.getMajor(), beacon.getMinor(), value.get("_id").toString());
+            beaconsDataSource.setBeaconParent(beacon.getMinor(), value.get("parent").toString());
+            beaconsDataSource.setBeaconId(beacon.getMinor(), value.get("_id").toString());
             new GetBeaconDetails(value.get("parent").toString(), context).execute();
 
         } catch (Exception e) {

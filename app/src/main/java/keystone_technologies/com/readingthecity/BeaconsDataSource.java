@@ -142,14 +142,14 @@ public class BeaconsDataSource {
         return null;
     }
 
-    public void setBeaconParent(int major, int minor, String parent) {
+    public void setBeaconParent(int minor, String parent) {
         open();
 
         ContentValues values = new ContentValues();
         values.put(BeaconsTable.COLUMN_PARENT, parent);
 
         String where = BeaconsTable.COLUMN_NOTIFICATION_ID + "=?";
-        String whereArgs[] = new String[] {String.valueOf(major) + String.valueOf(minor)};
+        String whereArgs[] = new String[] {String.valueOf(minor)};
 
         try {
             database.update(BeaconsTable.TABLE_BEACONS, values, where, whereArgs);
@@ -160,14 +160,14 @@ public class BeaconsDataSource {
         database.close();
     }
 
-    public void setBeaconId(int major, int minor, String id) {
+    public void setBeaconId(int minor, String id) {
         open();
 
         ContentValues values = new ContentValues();
         values.put(BeaconsTable.COLUMN_ID, id);
 
         String where = BeaconsTable.COLUMN_NOTIFICATION_ID + "=?";
-        String whereArgs[] = new String[] {String.valueOf(major) + String.valueOf(minor)};
+        String whereArgs[] = new String[] {String.valueOf(minor)};
 
         try {
             database.update(BeaconsTable.TABLE_BEACONS, values, where, whereArgs);
